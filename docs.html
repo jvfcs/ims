@@ -764,10 +764,10 @@
         <p>The Items tab is where you define the catalog of equipment your company owns. In the data tables, <strong>click the column headers (blue underlined text)</strong> to instantly sort the database.</p>
         <ul>
           <li>
-            <strong>Barcode (Required):</strong> The most important field. Must be completely unique (e.g., a UPC code or internal SKU).
+            <strong>Barcode (Required):</strong> The most important field. Must be completely unique (e.g., a UPC code or internal SKU). The system will block the creation of duplicates.
             <div class="mt-2 p-2 rounded" style="background: rgba(99, 102, 241, 0.05); border-left: 3px solid var(--accent);">
               <span class="small fw-bold" style="color: var(--accent);">Admin Override & Database Cascade:</span><br>
-              <span class="text-muted small">By default, once an item is created, the barcode is permanently locked to preserve database integrity. However, <strong>Admins</strong> have the exclusive ability to edit existing barcodes. If an Admin changes a barcode, the backend engine automatically cascades this change throughout the entire database, updating all historical transaction logs to match the new barcode so no historical data is orphaned.</span>
+              <span class="text-muted small">By default, once an item is created, the barcode is permanently locked to preserve database integrity. However, <strong>Admins</strong> have the exclusive ability to edit existing barcodes. If an Admin changes a barcode, the backend engine automatically cascades this change throughout the entire database, updating all historical transaction logs to match the new barcode so no historical data is orphaned. <em>Note: If the item has active stock, the system will prompt you for a final confirmation before initiating the cascade.</em></span>
               <br>
             </div>
           </li>
@@ -790,7 +790,13 @@
         <p><i>Access: Admin, Sub-Admin, Manager</i></p>
         <p>The Locations tab is where you create the places your items reside. Like the items table, column headers are clickable for rapid sorting.</p>
         <ul>
-          <li><strong>Location Name:</strong> The name of the space (e.g., Warehouse A, Production Truck 1).</li>
+          <li>
+            <strong>Location Name:</strong> The name of the space (e.g., Warehouse A, Production Truck 1). Must be completely unique.
+            <div class="mt-2 p-2 rounded" style="background: rgba(99, 102, 241, 0.05); border-left: 3px solid var(--accent);">
+              <span class="small fw-bold" style="color: var(--accent);">Admin Override & Database Cascade:</span><br>
+              <span class="text-muted small">Like Barcodes, Location Names are locked for standard users once created. <strong>Admins</strong> have the exclusive ability to rename existing locations. Renaming a location automatically triggers a database cascade, rewriting all historical transaction logs to reflect the new name. <em>Note: If the location currently holds active inventory, the system will warn you before proceeding.</em></span>
+            </div>
+          </li>
           <li><strong>Category:</strong> The general grouping (e.g., Office, Storage Room, Events).</li>
           <li><strong>Type:</strong> Choose between <strong>Physical Space</strong> (a permanent building) or <strong>Deployable</strong> (an asset that moves, like a Truck or Storage Case).</li>
           <li><strong>Deployment Location:</strong> If you select "Deployable" above, a new box appears asking *where* this truck/case is currently deployed to.</li>
@@ -1032,8 +1038,8 @@ git push -u origin main</code></pre>
           <span class="text-muted small">If you create an item as "Bulk Quantity", log 50 of them into a location, and then later edit the item to be "Individual Serials", the app will be completely confused because those 50 items don't have serial numbers attached to them. If you must change tracking types, audit the item down to 0 stock first.</span>
         </div>
         <div class="callout border-warning">
-          <strong class="text-warning">3. Never change Barcodes directly in the Google Sheet.</strong><br>
-          <span class="text-muted small">Always use the IMS web interface (as an Admin) to edit a barcode. The web interface triggers a script that safely updates all associated transaction logs. If you manually type over a barcode directly in the Google Sheet's "Items" tab, you will permanently sever its connection to its history in the "Logs" tab.</span>
+          <strong class="text-warning">3. Never change Barcodes or Location Names directly in the Google Sheet.</strong><br>
+          <span class="text-muted small">Always use the IMS web interface (as an Admin) to edit a barcode or rename a location. The web interface triggers a script that safely updates all associated transaction logs. If you manually type over a barcode or location name directly in the Google Sheet's "Items" or "Locations" tabs, you will permanently sever its connection to its history in the "Logs" tab.</span>
         </div>
         <div class="callout border-warning">
           <strong class="text-warning">4. If you edit the Apps Script, you MUST create a New Deployment.</strong><br>
