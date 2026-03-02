@@ -1921,12 +1921,19 @@ async function fetchData(callback) {
       }).submitAuditBackend(adjustments);
   }
   function editItem(bc) {
-    const itm = db.items.find(i => i.barcode === bc);
-    if(!itm) return;    
-    document.getElementById('catalogFormTitle').innerText = "Edit Item: " + bc;
-    document.getElementById('mBc').value = itm.barcode;
-    document.getElementById('mBc').disabled=true;document.getElementById('btnScanBc').disabled=true; 
-    document.getElementById('mMake').value = itm.make;
+    const itm = db.items.find(i => i.barcode === bc);
+    if(!itm) return;    
+    document.getElementById('catalogFormTitle').innerText = "Edit Item: " + bc;
+    document.getElementById('mBc').value = itm.barcode;
+    window.editingBc = itm.barcode;
+    if (currentUserRole === 'Admin') {
+        document.getElementById('mBc').disabled=false;
+        document.getElementById('btnScanBc').disabled=false;
+    } else {
+        document.getElementById('mBc').disabled=true;
+        document.getElementById('btnScanBc').disabled=true;
+    }
+    document.getElementById('mMake').value = itm.make;
     document.getElementById('mModel').value = itm.model;
     document.getElementById('mCat').value = itm.category;
     document.getElementById('mSerialized').value = itm.serialized || "No";
@@ -1952,9 +1959,10 @@ async function fetchData(callback) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
   function cancelEditItem() {
-    document.getElementById('catalogFormTitle').innerText = "Add to Catalog";
-    document.getElementById('mBc').value = "";
-    document.getElementById('mBc').disabled=false;document.getElementById('btnScanBc').disabled=false;
+    window.editingBc = null;
+    document.getElementById('catalogFormTitle').innerText = "Add to Catalog";
+    document.getElementById('mBc').value = "";
+    document.getElementById('mBc').disabled=false;document.getElementById('btnScanBc').disabled=false;
     document.getElementById('mMake').value = "";
     document.getElementById('mModel').value = "";
     document.getElementById('mCat').value = "";
@@ -2891,9 +2899,10 @@ async function fetchData(callback) {
       btn.innerText = "Processing Data...";
       const fileInput = document.getElementById('mImgFile');
       const file = fileInput.files[0];
-      let cleanPrice = document.getElementById('mPrice').value.replace(/[^0-9.-]+/g,"");
-      let payload = {
-          barcode: barcodeVal,
+      let cleanPrice = document.getElementById('mPrice').value.replace(/[^0-9.-]+/g,"");
+      let payload = {
+          oldBarcode: (mode === 'edit') ? window.editingBc : null,
+          barcode: barcodeVal,
           make: document.getElementById('mMake').value,
           model: document.getElementById('mModel').value,
           category: document.getElementById('mCat').value,
