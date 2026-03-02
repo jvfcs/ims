@@ -550,7 +550,7 @@
             <h6 class="fw-bold mb-3" id="catalogFormTitle">Add to Catalog</h6>
             <div class="input-group mb-2">
  	    <input type="text" id="mBc" class="form-control" placeholder="Barcode (Required)">
-  	    <button class="btn btn-outline-primary px-3 fs-5" type="button" onclick="startCamera('mBc')" title="Scan Barcode">📷</button>
+  	    <button class="btn btn-outline-primary px-3 fs-5" type="button" oncl<button id="btnScanBc" class="btn btn-outline-primary px-3 fs-5" type="button" onclick="startCamera('mBc')" title="Scan Barcode">📷</button>ick="startCamera('mBc')" title="Scan Barcode">📷</button>
 	    </div>
             <input type="text" id="mMake" class="form-control mb-2" placeholder="Make">
             <input type="text" id="mModel" class="form-control mb-2" placeholder="Model">
@@ -1922,7 +1922,7 @@ async function fetchData(callback) {
     if(!itm) return;    
     document.getElementById('catalogFormTitle').innerText = "Edit Item: " + bc;
     document.getElementById('mBc').value = itm.barcode;
-    document.getElementById('mBc').disabled = true; 
+    document.getElementById('mBc').disabled=true;document.getElementById('btnScanBc').disabled=true; 
     document.getElementById('mMake').value = itm.make;
     document.getElementById('mModel').value = itm.model;
     document.getElementById('mCat').value = itm.category;
@@ -1951,7 +1951,7 @@ async function fetchData(callback) {
   function cancelEditItem() {
     document.getElementById('catalogFormTitle').innerText = "Add to Catalog";
     document.getElementById('mBc').value = "";
-    document.getElementById('mBc').disabled = false;
+    document.getElementById('mBc').disabled=false;document.getElementById('btnScanBc').disabled=false;
     document.getElementById('mMake').value = "";
     document.getElementById('mModel').value = "";
     document.getElementById('mCat').value = "";
