@@ -2559,11 +2559,11 @@ async function fetchData(callback) {
     document.getElementById('detCat').innerText = itm.category;
     document.getElementById('detImg').src = itm.imgFile || itm.img || getPlaceholder(); 
     document.getElementById('detSpecsArea').innerHTML = itm.specs ? `<a href="${itm.specs}" target="_blank" class="small fw-bold text-primary">View Technical Specs</a>` : "";    
-    if (currentUserRole === 'Admin' || currentUserRole === 'Manager') {
-        document.getElementById('btnEditItemInner').classList.remove('hidden');
-    } else {
-        document.getElementById('btnEditItemInner').classList.add('hidden');
-    }
+    if (currentUserRole === 'Admin' || currentUserRole === 'Sub-Admin' || currentUserRole === 'Manager') {
+        document.getElementById('btnEditItemInner').classList.remove('hidden');
+    } else {
+        document.getElementById('btnEditItemInner').classList.add('hidden');
+    }
     refreshItemStockBadges(bc);
     document.getElementById('toLocContainer').classList.add('hidden');
     document.getElementById('toSubLocContainer').classList.add('hidden');
