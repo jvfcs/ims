@@ -143,7 +143,7 @@
       align-items: center; justify-content: center;
     }
     #backToTopBtn.visible { opacity: 1; pointer-events: auto; }
-    #backToTopBtn:hover { transform: translateY(-3px); filter: brightness(0.9); }
+    #backToTopBtn:hover { transform: translateY(-5px) scale(1.05); filter: brightness(1.1); box-shadow: 0 8px 20px rgba(0,0,0,0.4); }
     #gdprBanner {
       position: fixed; bottom: 0; left: 0; right: 0; z-index: 10500;
       background: var(--light-bg); border-top: 1px solid rgba(0,0,0,0.1);
@@ -891,7 +891,9 @@
   </div>
 </div>
 <style>[data-bs-theme="dark"] .gdpr-text { color: var(--dark-text) !important; }</style>
-<button id="backToTopBtn" onclick="scrollToTop()" title="Go to top">↑</button>
+<button id="backToTopBtn" onclick="scrollToTop()" title="Go to top">
+  <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+</button>
 <div class="modal fade" id="legalModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-scrollable modal-lg">
     <div class="modal-content bg-white" style="border-radius: 12px;">
@@ -2285,8 +2287,9 @@ async function fetchData(callback) {
        deployableSection.classList.add('hidden');
     }
   }
-  function viewLoc(n, t, isBack = false) { 
-    if (!isBack) history.pushState({ view: 'loc', name: n, type: t }, "");
+  function viewLoc(n, t, isBack = false) { 
+    window.scrollTo(0, 0);
+    if (!isBack) history.pushState({ view: 'loc', name: n, type: t }, "");
     hideAll(); 
     document.getElementById('locationDetail').classList.remove('hidden');     
     const isGlobal = (n === "Everywhere");
@@ -2575,8 +2578,9 @@ async function fetchData(callback) {
     if (localTotalValue > 0) priceText += (priceText ? ` | ` : ``) + `Visible Stock Value: ${appCurrency}${localTotalValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
     document.getElementById('detPrice').innerText = priceText;
   }
-  function viewItem(bc, isBack = false) { 
-    if (!isBack) history.pushState({ view: 'item', bc: bc }, "");
+  function viewItem(bc, isBack = false) { 
+    window.scrollTo(0, 0);
+    if (!isBack) history.pushState({ view: 'item', bc: bc }, "");
     hideAll(); 
     activeBc = bc;
     const itm = db.items.find(i => i.barcode === bc);
@@ -2760,13 +2764,15 @@ async function fetchData(callback) {
     succ.classList.remove('hidden');
     setTimeout(() => succ.classList.add('hidden'), 5000); 
   }
-  function showGrid(isBack = false) { 
-    if (!isBack) history.pushState({ view: 'grid' }, "");
+  function showGrid(isBack = false) { 
+    window.scrollTo(0, 0);
+    if (!isBack) history.pushState({ view: 'grid' }, "");
     hideAll(); 
     renderGrid(); 
     document.getElementById('gridView').classList.remove('hidden'); 
   }
   function showView(v) { 
+    window.scrollTo(0, 0);
     document.getElementById('viewInventory').classList.toggle('hidden', v !== 'inventory'); 
     document.getElementById('viewManagement').classList.toggle('hidden', v !== 'management');    
     applyRolePermissions();
@@ -2837,6 +2843,7 @@ async function fetchData(callback) {
     }
   });  
   function switchMgmt(t, isBack = false) { 
+    window.scrollTo(0, 0);
     if (!isBack) history.pushState({ view: 'mgmt', tab: t }, "");
     ['mDash','mItem','mLoc','mLog', 'mUser', 'mTheme'].forEach(id => document.getElementById(id).classList.add('hidden'));
     ['t0','t1','t2','t3', 't4', 't5'].forEach(id => document.getElementById(id).classList.remove('active'));    
