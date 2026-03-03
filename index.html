@@ -310,7 +310,7 @@
               <button class="btn btn-sm btn-success" id="btnCsvLoc" onclick="exportCsv()">Download CSV</button>
             </div>
           </div>          
-          <div id="locInfoHeader" class="d-flex flex-row gap-3 my-3 hidden border-bottom pb-3">
+          <div id="locInfoHeader" class="d-flex flex-row gap-3 mt-2 mb-3 hidden border-bottom pb-2">
              <div class="d-flex flex-column gap-2" style="width: 100px; flex-shrink: 0;">
                  <img id="locDetImg" style="width:100%; height:100px; border-radius:10px; object-fit:cover; background:#eee;">
                  <div id="locDetEmoji" class="d-flex align-items-center justify-content-center bg-light text-secondary rounded hidden" style="width:100%; height:100px; font-size:3rem; border: 1px solid #eee;"></div>
@@ -326,15 +326,15 @@
                 <p id="locDetNotes" class="small mb-0 text-muted fst-italic"></p>
               </div>
            </div>
-           <ul class="nav nav-tabs mb-3" id="locInventoryTabs">
-             <li class="nav-item">
-               <a class="nav-link active fw-bold" id="tabStock" onclick="switchLocTab('stock')">Stock Inventory</a>
-             </li>
-             <li class="nav-item">
-               <a class="nav-link fw-bold" id="tabDeployed" onclick="switchLocTab('deployed')">Deployed Assets</a>
-             </li>
-           </ul>
-           <div class="d-flex justify-content-between align-items-center mt-2 mb-4" id="locControlsContainer">
+           <ul class="nav nav-tabs mb-2" id="locInventoryTabs">
+             <li class="nav-item">
+               <a class="nav-link active fw-bold py-2" id="tabStock" onclick="switchLocTab('stock')">Stock Inventory</a>
+             </li>
+             <li class="nav-item">
+               <a class="nav-link fw-bold py-2" id="tabDeployed" onclick="switchLocTab('deployed')">Deployed Assets</a>
+             </li>
+           </ul>
+           <div class="d-flex justify-content-between align-items-center mb-2" id="locControlsContainer">
              <select id="itemSortSelect" class="form-select form-select-sm w-auto" onchange="renderItems(currentLocName)">
                <option value="cat_az">Category A-Z</option>
                <option value="cat_za">Category Z-A</option>
@@ -1953,8 +1953,8 @@ async function fetchData(callback) {
 
     if (db.users && db.users.length > 0) {
         document.getElementById('bodyUsers').innerHTML = db.users.map(u => `
-          <tr class="${u.status === 'Inactive' ? 'table-secondary text-muted' : ''}" onclick="editUser('${u.email}')" style="cursor: pointer;">
-            <td><div class="fw-bold">${getUserDisplayName(u.email)}</div><small class="text-muted">${u.email}</small></td>
+          <tr class="${u.status === 'Inactive' ? 'table-secondary' : ''}" onclick="editUser('${u.email}')" style="cursor: pointer; opacity: ${u.status === 'Inactive' ? '0.5' : '1'};">
+            <td><div class="fw-bold">${getUserDisplayName(u.email)}</div><small style="opacity: 0.75;">${u.email}</small></td>
             <td><span class="badge bg-primary">${u.role}</span></td>
             <td><small>${fmtTime(u.lastLogin)}</small></td>
             <td class="centered-col text-nowrap">
@@ -1998,40 +1998,36 @@ async function fetchData(callback) {
   }
   let currentAuditState = 'stock'; // Tracks which state is currently being audited
 
-  function startAudit(locName, forceState = null) {
-      if(locName === 'Everywhere') return alert('Cannot audit the Global view. Please select a specific physical location.');      
-      if (forceState) currentAuditState = forceState;
-      else currentAuditState = currentContextState; // Default to whichever tab they were on
+  function startAudit(locName) {
+      if(locName === 'Everywhere') return alert('Cannot audit the Global view. Please select a specific physical location.');      
+      
+      currentAuditState = currentContextState; // Automatically audit whichever tab they are currently viewing
 
-      document.getElementById('itemsContainer').classList.add('hidden');
-      document.getElementById('locControlsContainer').classList.add('hidden');
-      document.getElementById('auditContainer').classList.remove('hidden');      
-      let auditList = [];      
-      db.items.filter(i => i.status === 'Active').forEach(itm => {
-          const spots = new Set();
-          db.logs.filter(l => l.barcode === itm.barcode).forEach(l => {
-              if (l.toLoc === locName && l.subLoc) spots.add(l.subLoc);
-              if (l.fromLoc === locName && l.subLoc) spots.add(l.subLoc);
-          });          
-          let defaultQ = getStockBalance(itm.barcode, locName, "", currentAuditState);
-          if (defaultQ > 0) auditList.push({ item: itm, spot: "Default", expected: defaultQ, missingSerials: [], foundSerials: [] });          
-          spots.forEach(s => {
-              let q = getStockBalance(itm.barcode, locName, s, currentAuditState);
-              if (q > 0) auditList.push({ item: itm, spot: s, expected: q, missingSerials: [], foundSerials: [] });
-          });
-      });      
-      let h = `
-      <ul class="nav nav-pills nav-fill mb-3">
-        <li class="nav-item">
-          <button class="nav-link fw-bold w-100 border ${currentAuditState === 'stock' ? 'active bg-primary text-white' : 'text-primary'}" onclick="startAudit('${locName}', 'stock')">Verify Stock</button>
-        </li>
-        <li class="nav-item ms-2">
-          <button class="nav-link fw-bold w-100 border ${currentAuditState === 'deployed' ? 'active bg-info text-dark border-info' : 'text-info border-info'}" onclick="startAudit('${locName}', 'deployed')">Verify Deployed</button>
-        </li>
-      </ul>
-      <div class="alert alert-warning small border-warning">
-          <strong>Audit Mode (${currentAuditState.toUpperCase()}):</strong> Verify physical counts for ${currentAuditState} items only. 
-      </div>
+      document.getElementById('itemsContainer').classList.add('hidden');
+      document.getElementById('locControlsContainer').classList.add('hidden');
+      document.getElementById('auditContainer').classList.remove('hidden');      
+      let auditList = [];      
+      db.items.filter(i => i.status === 'Active').forEach(itm => {
+          const spots = new Set();
+          db.logs.filter(l => l.barcode === itm.barcode).forEach(l => {
+              if (l.toLoc === locName && l.subLoc) spots.add(l.subLoc);
+              if (l.fromLoc === locName && l.subLoc) spots.add(l.subLoc);
+          });          
+          let defaultQ = getStockBalance(itm.barcode, locName, "", currentAuditState);
+          if (defaultQ > 0) auditList.push({ item: itm, spot: "Default", expected: defaultQ, missingSerials: [], foundSerials: [] });          
+          spots.forEach(s => {
+              let q = getStockBalance(itm.barcode, locName, s, currentAuditState);
+              if (q > 0) auditList.push({ item: itm, spot: s, expected: q, missingSerials: [], foundSerials: [] });
+          });
+      });      
+      
+      let auditTitleColor = currentAuditState === 'deployed' ? 'text-info' : 'text-primary';
+      
+      let h = `
+      <div class="alert alert-warning border-warning">
+          <div class="fw-bold mb-1 ${auditTitleColor}" style="font-size: 1.1rem; text-transform: uppercase;">▶ AUDITING: ${currentAuditState}</div>
+          <small class="text-dark">Verify physical counts for <b>${currentAuditState}</b> items only. If tracking serials, click the blue Audit button.</small>
+      </div>
       <div class="scroll-area bg-white border mb-3" style="max-height: 55vh;">
         <table class="table table-sm table-hover m-0 align-middle">
           <thead class="table-light" style="position: sticky; top: 0; z-index: 1;">
@@ -2550,8 +2546,8 @@ async function fetchData(callback) {
                   <div class="meta-text">${meta}</div>
                 </div>`;
       };
-    const physicalData = data.filter(l => l.deployType !== 'Deployable');
-    const deployableData = data.filter(l => l.deployType === 'Deployable');
+    const physicalData = data.filter(l => l.deployType !== 'Deployable' && l.deployType !== 'Mobile Kit');
+    const deployableData = data.filter(l => l.deployType === 'Deployable' || l.deployType === 'Mobile Kit');
     document.getElementById('locationGridPhysical').innerHTML = physicalData.map(buildCard).join('');    
     const deployableSection = document.getElementById('deployableSection');
     if (deployableData.length > 0) {
