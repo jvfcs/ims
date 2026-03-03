@@ -1644,7 +1644,7 @@ async function fetchData(callback) {
       const notesHtml = i.notes ? '<div class="text-muted mt-1" style="font-size:0.75rem; line-height: 1.2;"><strong>Notes:</strong> ' + i.notes + '</div>' : '';
       
       return `
-      <tr class="${i.status === 'Inactive' ? 'table-secondary text-muted' : ''} ${criticalClass}" onclick="editItem('${i.barcode}')" style="cursor: pointer;">
+      <tr class="${i.status === 'Inactive' ? 'table-secondary' : ''} ${criticalClass}" onclick="editItem('${i.barcode}')" style="cursor: pointer; opacity: ${i.status === 'Inactive' ? '0.5' : '1'};">
         <td><small>${i.barcode}</small></td>
         <td>
           <div><strong>${i.make}</strong> ${i.model} ${serialBadge}</div>
@@ -1686,8 +1686,10 @@ async function fetchData(callback) {
           </button>
       ` : `<span class="badge bg-secondary w-100 py-2">Read Only</span>`;
 
+      const rowOpacity = (l.status === 'Inactive') ? '0.4' : (hasAccess ? '1' : '0.65');
+
       return `
-      <tr class="${l.status === 'Inactive' ? 'table-secondary text-muted' : ''}" onclick="${rowAction}" style="cursor: ${hasAccess ? 'pointer' : 'not-allowed'}; opacity: ${hasAccess ? '1' : '0.65'};">
+      <tr class="${l.status === 'Inactive' ? 'table-secondary' : ''}" onclick="${rowAction}" style="cursor: ${hasAccess ? 'pointer' : 'not-allowed'}; opacity: ${rowOpacity};">
         <td><span class="badge bg-secondary">${l.type}</span></td>
         <td>
           <div class="fw-bold">${l.locationName}</div>
