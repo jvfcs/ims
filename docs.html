@@ -1039,6 +1039,17 @@ git push -u origin main</code></pre>
         <p>Go to the URL where your app is hosted. Because you already placed your Google Client ID into your Database Template tab in Step 3, the Google Login button will appear immediately!</p>
         <p><strong>The very first user to log into a completely blank database is automatically granted the Admin role.</strong> Once you are logged in, click the Management button in the top right to start exploring your new system!</p>
       </section>
+      <section id="system-audit" class="doc-section mb-5">
+        <h2>Management: System Audit</h2>
+        <p><i>Access: Admin, Sub-Admin</i></p>
+        <p>In addition to standard inventory movement logs, the IMS features a permanent, immutable <strong>System Audit Trail</strong>. This tracks all administrative and configuration changes made across the platform.</p>
+        <ul>
+          <li><strong>Detailed Diffing:</strong> Whenever an Item, Location, or User is updated, the backend engine automatically compares the old data against the new data and records the exact changes (e.g., <code>Min Stock: 5 -> 10</code>, <code>Role: Operator -> Manager</code>).</li>
+          <li><strong>Click for Details:</strong> In the System Audit tab, you can click on any row to open a detailed popup modal showing exactly who performed the action, when, and the specific text diff of what was changed.</li>
+          <li><strong>CSV Export:</strong> Like transaction logs, System Audits can be downloaded directly to a CSV file for compliance, security reviews, and accountability tracking.</li>
+        </ul>
+      </section>
+
       <section id="mistakes" class="doc-section">
         <h2 class="text-warning">Common Mistakes to Avoid</h2>
         <p>This system is incredibly resilient, but because it relies on a Google Sheet as its brain, certain manual actions by Admins can break it. Avoid these common pitfalls:</p>        
@@ -1050,12 +1061,17 @@ git push -u origin main</code></pre>
           <strong class="text-warning">2. Do not change an item's Tracking Type after it has stock.</strong><br>
           <span class="text-muted small">If you create an item as "Bulk Quantity", log 50 of them into a location, and then later edit the item to be "Individual Serials", the app will be completely confused because those 50 items don't have serial numbers attached to them. If you must change tracking types, audit the item down to 0 stock first.</span>
         </div>
-        <div class="callout border-warning">
+        <div class="callout border-warning mb-3">
           <strong class="text-warning">3. Never change Barcodes or Location Names directly in the Google Sheet.</strong><br>
           <span class="text-muted small">Always use the IMS web interface (as an Admin) to edit a barcode or rename a location. The web interface triggers a script that safely updates all associated transaction logs. If you manually type over a barcode or location name directly in the Google Sheet's "Items" or "Locations" tabs, you will permanently sever its connection to its history in the "Logs" tab.</span>
         </div>
+        
+        <div class="callout border-danger">
+          <strong class="text-danger">4. Invalid Roles in the Database trigger a Security Failsafe.</strong><br>
+          <span class="text-muted small">The system authentication engine is strictly case-insensitive but enforces exact role matching. If a user is assigned an unknown or misspelled role directly in the Google Sheet (e.g., "Supervisor", "Read-Only", "viewerrr"), the system will automatically trigger a <strong>Security Failsafe</strong>. The user's login token will be rejected, and they will be permanently locked out with an "Access Denied" screen until an Admin assigns a valid role from the dropdown menu in the UI.</span>
+        </div>
         <div class="callout border-warning">
-          <strong class="text-warning">4. If you edit the Apps Script, you MUST create a New Deployment.</strong><br>
+          <strong class="text-warning">5. If you edit the Apps Script, you MUST create a New Deployment.</strong><br>
           <span class="text-muted small">If you ever open the <code>Code.gs</code> file to edit the backend code, simply clicking the "Save" icon is not enough. Google caches the API. You must click <strong>Deploy &gt; Manage Deployments &gt; Edit (Pencil Icon) &gt; New Version &gt; Deploy</strong> for your code changes to actually go live.</span>
         </div>
       </section>
