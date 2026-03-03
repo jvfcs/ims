@@ -439,6 +439,7 @@
           <li class="nav-item"><a class="nav-link text-nowrap" id="t1" onclick="switchMgmt('item')">Items</a></li>
           <li class="nav-item"><a class="nav-link text-nowrap" id="t2" onclick="switchMgmt('loc')">Locations</a></li>
           <li class="nav-item"><a class="nav-link text-nowrap" id="t3" onclick="switchMgmt('log')">Logs</a></li>
+          <li class="nav-item"><a class="nav-link text-nowrap" id="t6" onclick="switchMgmt('syslog')">System Audit</a></li>
           <li class="nav-item d-none" id="tabUserAccess"><a class="nav-link text-nowrap" id="t4" onclick="switchMgmt('user')">Users</a></li>
           <li class="nav-item d-none" id="tabTheme"><a class="nav-link text-nowrap" id="t5" onclick="switchMgmt('theme')">Theme</a></li>
         </ul>
@@ -722,6 +723,31 @@
           <button id="btnLoadMore" class="btn btn-outline-primary btn-sm px-4" onclick="loadMoreLogs()">Load More Activities</button>
         </div>
       </div>
+      <div id="mSysLog" class="hidden">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h6 class="fw-bold m-0">System Audit Trail</h6>
+          <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-success text-nowrap" onclick="exportSysLogCsv()">Download CSV</button>
+            <input type="number" id="exportSysLogRows" class="form-control form-control-sm" placeholder="Rows to DL" value="100" style="width:100px;"> rows
+          </div>
+        </div>
+        <div class="table-responsive bg-white p-2 border rounded shadow-sm">
+           <table class="table table-sm table-hover m-0 text-nowrap" style="font-size:0.85rem">
+             <thead class="table-light"><tr>
+               <th>#</th>
+               <th>Date</th>
+               <th>User</th>
+               <th>Action</th>
+               <th>Entity Type</th>
+               <th>Entity ID</th>
+             </tr></thead>
+             <tbody id="bodySysLogs"></tbody>
+           </table>
+        </div>
+        <div class="text-center mt-3">
+          <button id="btnLoadMoreSys" class="btn btn-outline-primary btn-sm px-4" onclick="loadMoreSysLogs()">Load More Audits</button>
+        </div>
+      </div>
       <div id="mUser" class="hidden">
         <div class="row">
           <div class="col-lg-4 mb-4">
@@ -885,6 +911,18 @@
        </div>
    </div>
 </div>
+<div class="modal fade" id="sysLogModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content bg-white" style="border-radius: 12px;">
+      <div class="modal-header border-bottom">
+        <h5 class="modal-title fw-bold text-primary">Audit Details</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" style="font-size: 0.85rem; line-height: 1.6;" id="sysLogModalBody">
+      </div>
+    </div>
+  </div>
+</div>
 <div id="gdprBanner" class="p-3">
   <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
     <div style="font-size: 0.85rem; color: var(--light-text);" class="text-md-start text-center gdpr-text">
@@ -919,6 +957,7 @@
   let activeBc = "";
   let currentLocName = "";
   let logLimit = 20;
+  let sysLogLimit = 20;
     let currentSort = {
     item: { col: -1, asc: true },
     loc: { col: -1, asc: true },
@@ -1244,6 +1283,7 @@
           if (!document.getElementById('mLoc').classList.contains('hidden')) updateMgmtTables();
           if (!document.getElementById('mUser').classList.contains('hidden')) updateMgmtTables();
           if (!document.getElementById('mLog').classList.contains('hidden')) renderLogs();
+          if (!document.getElementById('mSysLog').classList.contains('hidden')) renderSysLogs();
       }
   }
   async function toggleTheme() {
@@ -2890,11 +2930,52 @@ async function fetchData(callback) {
         }
     }
   });  
-  function switchMgmt(t, isBack = false) { 
-    window.scrollTo(0, 0);
-    if (!isBack) history.pushState({ view: 'mgmt', tab: t }, "");
-    ['mDash','mItem','mLoc','mLog', 'mUser', 'mTheme'].forEach(id => document.getElementById(id).classList.add('hidden'));
-    ['t0','t1','t2','t3', 't4', 't5'].forEach(id => document.getElementById(id).classList.remove('active'));    
+  function switchMgmt(t, isBack = false) { 
+    window.scrollTo(0, 0);
+    if (!isBack) history.pushState({ view: 'mgmt', tab: t }, "");
+    ['mDash','mItem','mLoc','mLog', 'mSysLog', 'mUser', 'mTheme'].forEach(id => document.getElementById(id).classList.add('hidden'));
+    ['t0','t1','t2','t3', 't4', 't5', 't6'].forEach(id => document.getElementById(id).classList.remove('active'));    
+    
+    cancelEditItem();
+    cancelEditLoc();
+    cancelEditUser();
+
+    if(t === 'dash') { 
+      document.getElementById('mDash').classList.remove('hidden'); 
+      document.getElementById('t0').classList.add('active'); 
+      renderDashboard(); 
+    }
+    if(t === 'item') { 
+      document.getElementById('mItem').classList.remove('hidden'); 
+      document.getElementById('t1').classList.add('active'); 
+      updateMgmtTables(); 
+    }
+    if(t === 'loc') { 
+      document.getElementById('mLoc').classList.remove('hidden'); 
+      document.getElementById('t2').classList.add('active'); 
+      updateMgmtTables(); 
+    }
+    if(t === 'log') { 
+      document.getElementById('mLog').classList.remove('hidden'); 
+      document.getElementById('t3').classList.add('active'); 
+      renderLogs(); 
+    }
+    if(t === 'syslog') { 
+      document.getElementById('mSysLog').classList.remove('hidden'); 
+      document.getElementById('t6').classList.add('active'); 
+      renderSysLogs(); 
+    }
+    if(t === 'user') { 
+      document.getElementById('mUser').classList.remove('hidden'); 
+      document.getElementById('t4').classList.add('active'); 
+      updateMgmtTables(); 
+    }
+    if(t === 'theme') { 
+      document.getElementById('mTheme').classList.remove('hidden'); 
+      document.getElementById('t5').classList.add('active'); 
+      populateThemeForm();
+    }
+  }    
     
     cancelEditItem();
     cancelEditLoc();
@@ -3394,6 +3475,78 @@ async function fetchData(callback) {
       document.getElementById('legalModalBody').innerHTML = legalHtml;      
       const legalModal = new bootstrap.Modal(document.getElementById('legalModal'));
       legalModal.show();
+  }
+  function renderSysLogs() {
+    const tbody = document.getElementById('bodySysLogs');
+    if (!db.sysLogs) db.sysLogs = [];
+    const sortedLogs = [...db.sysLogs].reverse();
+    const visible = sortedLogs.slice(0, sysLogLimit);
+    tbody.innerHTML = visible.map((l, index) => {
+      let badgeClass = "bg-secondary";
+      if (l.action === "Created" || l.action === "Enabled") badgeClass = "bg-success";
+      if (l.action === "Updated" || l.action === "Renamed") badgeClass = "bg-primary";
+      if (l.action === "Deleted" || l.action === "Disabled") badgeClass = "bg-danger";
+
+      return `<tr onclick="showSysLogDetails(${index})" style="cursor:pointer;" title="Click to view details">
+          <td class="text-muted fw-bold"><small>${index + 1}</small></td>
+          <td><small class="text-muted">${fmtTime(l.timestamp)}</small></td>
+          <td><small>${getUserDisplayName(l.userEmail)}</small></td>
+          <td><span class="badge ${badgeClass}">${l.action}</span></td>
+          <td><strong>${l.entityType}</strong></td>
+          <td><small>${l.entityId}</small></td>
+        </tr>`;
+    }).join('');
+    document.getElementById('btnLoadMoreSys').classList.toggle('hidden', sysLogLimit >= sortedLogs.length);
+  }
+
+  function loadMoreSysLogs() { sysLogLimit += 20; renderSysLogs(); }
+
+  function showSysLogDetails(index) {
+      const sortedLogs = [...db.sysLogs].reverse();
+      const l = sortedLogs[index];
+      if(!l) return;
+      
+      let detailsHtml = l.details.split('|').map(d => `<div class="mb-2 pb-2 border-bottom text-dark">👉 ${d.trim()}</div>`).join('');
+      if (!l.details || l.details === "Saved without changes") detailsHtml = `<div class="text-muted fst-italic">${l.details || "No additional details recorded."}</div>`;
+
+      let badgeClass = "bg-secondary";
+      if (l.action === "Created" || l.action === "Enabled") badgeClass = "bg-success";
+      if (l.action === "Updated" || l.action === "Renamed") badgeClass = "bg-primary";
+      if (l.action === "Deleted" || l.action === "Disabled") badgeClass = "bg-danger";
+
+      const html = `
+          <div class="d-flex justify-content-between mb-3 border-bottom pb-2">
+              <div><small class="text-muted d-block">Performed By</small><strong class="text-dark">${getUserDisplayName(l.userEmail)}</strong> <br><small class="text-muted">${l.userEmail}</small></div>
+              <div class="text-end"><small class="text-muted d-block">Timestamp</small><strong class="text-dark">${fmtTime(l.timestamp)}</strong></div>
+          </div>
+          <div class="mb-3 p-3 rounded bg-light border">
+              <span class="badge ${badgeClass} fs-6 mb-2">${l.action}</span><br>
+              <span class="text-muted small text-uppercase">Entity:</span> <strong class="text-dark">${l.entityType}</strong><br>
+              <span class="text-muted small text-uppercase">ID / Target:</span> <strong class="text-dark">${l.entityId}</strong>
+          </div>
+          <h6 class="fw-bold mb-2 text-primary">Diff Details:</h6>
+          <div class="p-3 bg-light rounded border" style="max-height: 250px; overflow-y: auto;">
+              ${detailsHtml}
+          </div>
+      `;
+      document.getElementById('sysLogModalBody').innerHTML = html;
+      const modal = new bootstrap.Modal(document.getElementById('sysLogModal'));
+      modal.show();
+  }
+
+  function exportSysLogCsv() {
+    const limit = parseInt(document.getElementById('exportSysLogRows').value) || 100;
+    const sortedLogs = [...db.sysLogs].reverse().slice(0, limit);
+    let csv = "Date,User,Action,Entity Type,Entity ID,Details\n";    
+    sortedLogs.forEach(l => {
+      csv += `"${fmtTime(l.timestamp)}","${l.userEmail}","${l.action}","${l.entityType}","${l.entityId}","${l.details.replace(/"/g, '""')}"\n`;
+    });    
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `System_Audit_Logs_${limit}_Rows.csv`;
+    a.click();
   }
   window.addEventListener('popstate', (e) => {
       if (e.state) {
