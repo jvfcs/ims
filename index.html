@@ -2975,42 +2975,6 @@ async function fetchData(callback) {
       document.getElementById('t5').classList.add('active'); 
       populateThemeForm();
     }
-  }    
-    
-    cancelEditItem();
-    cancelEditLoc();
-    cancelEditUser();
-
-    if(t === 'dash') { 
-      document.getElementById('mDash').classList.remove('hidden'); 
-      document.getElementById('t0').classList.add('active'); 
-      renderDashboard(); 
-    }
-    if(t === 'item') { 
-      document.getElementById('mItem').classList.remove('hidden'); 
-      document.getElementById('t1').classList.add('active'); 
-      updateMgmtTables(); 
-    }
-    if(t === 'loc') { 
-      document.getElementById('mLoc').classList.remove('hidden'); 
-      document.getElementById('t2').classList.add('active'); 
-      updateMgmtTables(); 
-    }
-    if(t === 'log') { 
-      document.getElementById('mLog').classList.remove('hidden'); 
-      document.getElementById('t3').classList.add('active'); 
-      renderLogs(); 
-    }
-    if(t === 'user') { 
-      document.getElementById('mUser').classList.remove('hidden'); 
-      document.getElementById('t4').classList.add('active'); 
-      updateMgmtTables(); 
-    }
-    if(t === 'theme') {
-      document.getElementById('mTheme').classList.remove('hidden'); 
-      document.getElementById('t5').classList.add('active');
-      populateThemeForm();
-    }
   }  
   function toggleLayout() { layout = document.getElementById('layoutToggle').checked ? "list" : "grid"; renderItems(currentLocName); }
   function hideAll() { 
