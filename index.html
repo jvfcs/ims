@@ -381,8 +381,13 @@
             <div id="detUpdate" class="meta-text border-top pt-2 mt-2"></div>
           </div>
         </div>        
-        <div id="detStock" class="mt-4 mb-2 d-flex flex-wrap gap-2"></div>
-        <div id="detSerialList" class="mb-4 hidden"></div>        
+        <div class="mt-4 mb-1 small fw-bold text-muted text-uppercase">Stock Locations</div>
+        <div id="detStock" class="mb-3 d-flex flex-wrap gap-2"></div>
+        <div id="detDeployedContainer" class="hidden">
+          <div class="mb-1 small fw-bold text-muted text-uppercase">Deployed Locations</div>
+          <div id="detDeployed" class="mb-3 d-flex flex-wrap gap-2"></div>
+        </div>
+        <div id="detSerialList" class="mb-4 hidden"></div>        
         <div id="inlineActionForm" class="mt-4 border-top pt-3 hidden">
           <div id="errorMsg" class="alert alert-danger py-2 px-3 small mb-3 hidden fw-bold"></div>
           <div id="successMsg" class="alert alert-success py-2 px-3 small mb-3 hidden fw-bold"></div>          
@@ -483,7 +488,7 @@
             <span class="text-primary fw-bold toggle-icon">▼</span>
         </div>
         <div id="collapseDashStock" class="collapse show">
-            <div class="row g-3 mb-4">
+            <div class="row g-3 mb-3">
               <div class="col-md-4">
                 <div class="stat-card stat-bg-1 shadow-sm h-100">
                   <p>Unique Stock Items</p>
@@ -497,9 +502,23 @@
                 </div>
               </div>
               <div class="col-md-4">
-                <div class="stat-card stat-bg-4 shadow-sm h-100">
+                <div class="stat-card stat-bg-3 shadow-sm h-100">
                   <p>Total Stock Value</p>
                   <h3 id="statTotalStockValue">$0.00</h3>
+                </div>
+              </div>
+            </div>
+            <div class="row g-3 mb-4">
+              <div class="col-md-6">
+                <div class="stat-card stat-bg-4 shadow-sm h-100">
+                  <p>Physical Spaces Stock</p>
+                  <h3 id="statPhysStockVal">$0.00</h3>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="stat-card stat-bg-5 shadow-sm h-100">
+                  <p>Mobile Kits Stock</p>
+                  <h3 id="statKitStockVal">$0.00</h3>
                 </div>
               </div>
             </div>
@@ -510,23 +529,37 @@
             <span class="text-info fw-bold toggle-icon">▼</span>
         </div>
         <div id="collapseDashDeployed" class="collapse show">
-            <div class="row g-3 mb-4">
+            <div class="row g-3 mb-3">
               <div class="col-md-4">
-                <div class="stat-card stat-bg-3 shadow-sm h-100">
+                <div class="stat-card stat-bg-1 shadow-sm h-100" style="opacity: 0.9;">
                   <p>Unique Deployed Items</p>
                   <h3 id="statUniqueDep">0</h3>
                 </div>
               </div>
               <div class="col-md-4">
-                <div class="stat-card stat-bg-3 shadow-sm h-100">
+                <div class="stat-card stat-bg-2 shadow-sm h-100" style="opacity: 0.9;">
                   <p>Total Deployed Units</p>
                   <h3 id="statTotalDepUnits">0</h3>
                 </div>
               </div>
               <div class="col-md-4">
-                <div class="stat-card stat-bg-5 shadow-sm h-100">
+                <div class="stat-card stat-bg-3 shadow-sm h-100" style="opacity: 0.9;">
                   <p>Total Deployed Value</p>
                   <h3 id="statTotalDepValue">$0.00</h3>
+                </div>
+              </div>
+            </div>
+            <div class="row g-3 mb-4">
+              <div class="col-md-6">
+                <div class="stat-card stat-bg-4 shadow-sm h-100" style="opacity: 0.9;">
+                  <p>Physical Spaces Deployed</p>
+                  <h3 id="statPhysDepVal">$0.00</h3>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="stat-card stat-bg-5 shadow-sm h-100" style="opacity: 0.9;">
+                  <p>Mobile Kits Deployed</p>
+                  <h3 id="statKitDepVal">$0.00</h3>
                 </div>
               </div>
             </div>
@@ -1497,12 +1530,8 @@ async function fetchData(callback) {
     db.locations.filter(l => l.status === 'Active').forEach(l => {
       locationStats[l.locationName] = { type: l.type, units: 0, value: 0, deployType: l.deployType || 'Physical Space', groups: l.lbacGroups || '' };
     });
-    let globalStockUnits = 0;
-    let globalStockValue = 0;
-    let uniqueStockItems = 0;
-    let globalDepUnits = 0;
-    let globalDepValue = 0;
-    let uniqueDepItems = 0;
+    let globalStockUnits = 0, globalStockValue = 0, uniqueStockItems = 0, stockPhysVal = 0, stockKitVal = 0;
+    let globalDepUnits = 0, globalDepValue = 0, uniqueDepItems = 0, depPhysVal = 0, depKitVal = 0;
 
     const activeItems = db.items.filter(i => i.status === 'Active');    
     activeItems.forEach(itm => {
@@ -1519,8 +1548,22 @@ async function fetchData(callback) {
           locationStats[locName].units += totalAtLoc;
           locationStats[locName].value += (totalAtLoc * price);
         }
-        if (stockAtLoc > 0) itemGlobalStock += stockAtLoc;
-        if (deployedAtLoc > 0) itemGlobalDep += deployedAtLoc;
+        if (stockAtLoc > 0) {
+          itemGlobalStock += stockAtLoc;
+          if (locationStats[locName].deployType === 'Mobile Kit' || locationStats[locName].deployType === 'Deployable') {
+            stockKitVal += (stockAtLoc * price);
+          } else {
+            stockPhysVal += (stockAtLoc * price);
+          }
+        }
+        if (deployedAtLoc > 0) {
+          itemGlobalDep += deployedAtLoc;
+          if (locationStats[locName].deployType === 'Mobile Kit' || locationStats[locName].deployType === 'Deployable') {
+            depKitVal += (deployedAtLoc * price);
+          } else {
+            depPhysVal += (deployedAtLoc * price);
+          }
+        }
       }
 
       if (itemGlobalStock > 0) uniqueStockItems++;
@@ -1544,11 +1587,15 @@ async function fetchData(callback) {
     
     document.getElementById('statUniqueStock').innerText = uniqueStockItems;
     document.getElementById('statTotalStockUnits').innerText = globalStockUnits.toLocaleString('en-US');
-    document.getElementById('statTotalStockValue').innerText = appCurrency + globalStockValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});    
+    document.getElementById('statTotalStockValue').innerText = appCurrency + globalStockValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    document.getElementById('statPhysStockVal').innerText = appCurrency + stockPhysVal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    document.getElementById('statKitStockVal').innerText = appCurrency + stockKitVal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
     
     document.getElementById('statUniqueDep').innerText = uniqueDepItems;
     document.getElementById('statTotalDepUnits').innerText = globalDepUnits.toLocaleString('en-US');
     document.getElementById('statTotalDepValue').innerText = appCurrency + globalDepValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    document.getElementById('statPhysDepVal').innerText = appCurrency + depPhysVal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    document.getElementById('statKitDepVal').innerText = appCurrency + depKitVal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
     const globalAlertBanner = document.getElementById('globalStockAlert');
     const alertArea = document.getElementById('dashAlertsArea');
     const alertBody = document.getElementById('dashAlertsBody');    
@@ -2672,35 +2719,55 @@ async function fetchData(callback) {
     }
   }
   function refreshItemStockBadges(bc) {
-    const itm = db.items.find(i => i.barcode === bc);
-    const locs = {};
-    let visibleStockTotal = 0;
-    db.logs.filter(l => l.barcode === bc).forEach(l => {
-      const toKey = l.toLoc + "|||" + (l.subLoc || "");
-      const fromKey = l.fromLoc + "|||" + (l.subLoc || "");
-      if(l.toLoc && !["External","Transit","Deployed"].includes(l.toLoc)) locs[toKey] = (locs[toKey] || 0) + l.quantity;
-      if(l.fromLoc && !["External","Transit","Deployed"].includes(l.fromLoc)) locs[fromKey] = (locs[fromKey] || 0) - Math.abs(l.quantity);
-    });    
-    let h = "";
-    for(let k in locs) {
-      if(locs[k] > 0) {
-        const parts = k.split("|||");
-        const locName = parts[0];
-        const subLoc = parts[1];
-        const locObj = db.locations.find(l => l.locationName === locName);
-        if (!locObj && !['Admin', 'Sub-Admin'].includes(currentUserRole)) continue;
-        visibleStockTotal += locs[k];
-        const locType = locObj ? locObj.type : 'Unknown';
-        const safeK = locName.replace(/'/g, "\\'");
-        const safeType = locType.replace(/'/g, "\\'");
-        const displayLabel = subLoc ? `${getLocLabel(locName)} (${subLoc})` : getLocLabel(locName);        
-        h += `<span class="badge stock-badge p-2 m-1 d-flex align-items-center" onclick="viewLoc('${safeK}', '${safeType}')">
-                <span class="me-2">${displayLabel}:</span> 
-                <span class="text-primary fs-6">${locs[k].toLocaleString('en-US')}</span>
-              </span>`;
-      }
-    }
-    document.getElementById('detStock').innerHTML = h || '<span class="text-muted small">No stock in authorized locations.</span>';
+    const itm = db.items.find(i => i.barcode === bc);
+    const uniqueCombos = new Set();
+    let visibleStockTotal = 0;
+    let visibleDepTotal = 0;
+    db.logs.filter(l => l.barcode === bc).forEach(l => {
+      if(l.toLoc && !["External","Transit","Deployed","Consumed","Lost/Audit","Found/Audit"].includes(l.toLoc)) uniqueCombos.add(l.toLoc + "|||" + (l.subLoc || ""));
+      if(l.fromLoc && !["External","Transit","Deployed","Consumed","Lost/Audit","Found/Audit"].includes(l.fromLoc)) uniqueCombos.add(l.fromLoc + "|||" + (l.subLoc || ""));
+    });
+    let hStock = "";
+    let hDep = "";
+    uniqueCombos.forEach(k => {
+      const parts = k.split("|||");
+      const locName = parts[0];
+      const subLoc = parts[1];
+      const locObj = db.locations.find(l => l.locationName === locName);
+      if (!locObj && !['Admin', 'Sub-Admin'].includes(currentUserRole)) return;
+      
+      const stockQty = getStockBalance(bc, locName, subLoc, 'stock');
+      const depQty = getStockBalance(bc, locName, subLoc, 'deployed');
+      
+      const locType = locObj ? locObj.type : 'Unknown';
+      const safeK = locName.replace(/'/g, "\\'");
+      const safeType = locType.replace(/'/g, "\\'");
+      const displayLabel = subLoc ? `${getLocLabel(locName)} (${subLoc})` : getLocLabel(locName);
+
+      if(stockQty > 0) {
+        visibleStockTotal += stockQty;
+        hStock += `<span class="badge stock-badge p-2 m-1 d-flex align-items-center" onclick="viewLoc('${safeK}', '${safeType}')">
+                <span class="me-2">${displayLabel}:</span> 
+                <span class="text-primary fs-6">${stockQty.toLocaleString('en-US')}</span>
+              </span>`;
+      }
+      if(depQty > 0) {
+        visibleDepTotal += depQty;
+        hDep += `<span class="badge stock-badge border-info p-2 m-1 d-flex align-items-center" onclick="viewLoc('${safeK}', '${safeType}')">
+                <span class="me-2 text-info">${displayLabel}:</span> 
+                <span class="text-dark fs-6">${depQty.toLocaleString('en-US')}</span>
+              </span>`;
+      }
+    });
+
+    document.getElementById('detStock').innerHTML = hStock || '<span class="text-muted small">No stock in authorized locations.</span>';
+    const depCont = document.getElementById('detDeployedContainer');
+    if (hDep) {
+      document.getElementById('detDeployed').innerHTML = hDep;
+      depCont.classList.remove('hidden');
+    } else {
+      depCont.classList.add('hidden');
+    }
     const serialListEl = document.getElementById('detSerialList');
     if (itm && itm.serialized === 'Yes') {
       const serialBalances = {};
