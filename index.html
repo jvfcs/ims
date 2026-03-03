@@ -46,10 +46,26 @@
     .loc-card h6, #selectedLocTitle, #detName, #cameraModalTitle, #loginTitle, #appTitleText, #appShortTitleText, #catalogFormTitle, #locFormTitle, #userFormTitle { color: var(--brand-color) !important; }
     .card, .loc-card, .item-card, .item-row { background-color: var(--light-card); border: 1px solid rgba(0,0,0,0.05); }
     #appContainer {
-      padding-top: calc(env(safe-area-inset-top) + 15px) !important;
       padding-bottom: calc(env(safe-area-inset-bottom) + 15px) !important;
       padding-left: env(safe-area-inset-left) !important;
       padding-right: env(safe-area-inset-right) !important;
+    }
+    #stickyHeaderContainer {
+      position: sticky;
+      top: 0;
+      z-index: 1040;
+      background-color: var(--light-bg);
+      padding-top: calc(env(safe-area-inset-top) + 15px);
+      margin-left: calc(-15px - env(safe-area-inset-left));
+      margin-right: calc(-15px - env(safe-area-inset-right));
+      padding-left: calc(15px + env(safe-area-inset-left));
+      padding-right: calc(15px + env(safe-area-inset-right));
+      transition: background-color 0.3s ease;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    }
+    [data-bs-theme="dark"] #stickyHeaderContainer {
+      background-color: var(--dark-bg);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
     }    
     #syncIndicator {
       bottom: calc(env(safe-area-inset-bottom) + 20px) !important;
@@ -218,40 +234,43 @@
     <p id="deniedEmail" class="fw-bold mt-3 text-secondary"></p>
   </div>
 </div>
-<div id="appContainer" class="container py-3 hidden">
+<div id="appContainer" class="container hidden">
   <div id="syncIndicator">
     <div class="spinner-border text-light" role="status" style="width: 14px; height: 14px; border-width: 2px;"></div>
     <span>Syncing...</span>
   </div>
-  <div id="globalStockAlert" class="alert alert-danger text-center fw-bold shadow-sm mb-3 hidden" style="cursor: pointer;" onclick="showView('management'); switchMgmt('dash');">
-    ⚠️ Low Stock: Click here for details.
-  </div>
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <div class="d-flex align-items-center" style="cursor: pointer;" onclick="showView('inventory')" title="Go to Home">
-      <img id="appLogo" src="" alt="" style="width:30px; height:30px; object-fit:contain; opacity: 0; transition: opacity 0.5s;" class="me-2 text-primary">
-      <div>
-        <h5 id="appTitleText" class="fw-bold m-0 mt-1 text-primary d-none d-sm-block">Inventory Management System</h5>
-        <h5 id="appShortTitleText" class="fw-bold m-0 mt-1 text-primary d-block d-sm-none">IMS</h5>
+
+  <div id="stickyHeaderContainer" class="pb-3 mb-3">
+    <div id="globalStockAlert" class="alert alert-danger text-center fw-bold shadow-sm mb-3 hidden" style="cursor: pointer;" onclick="showView('management'); switchMgmt('dash');">
+      ⚠️ Low Stock: Click here for details.
+    </div>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <div class="d-flex align-items-center" style="cursor: pointer;" onclick="showView('inventory')" title="Go to Home">
+        <img id="appLogo" src="" alt="" style="width:30px; height:30px; object-fit:contain; opacity: 0; transition: opacity 0.5s;" class="me-2 text-primary">
+        <div>
+          <h5 id="appTitleText" class="fw-bold m-0 mt-1 text-primary d-none d-sm-block">Inventory Management System</h5>
+          <h5 id="appShortTitleText" class="fw-bold m-0 mt-1 text-primary d-block d-sm-none">IMS</h5>
+        </div>
+      </div>
+      <div class="text-end">
+        <div class="d-flex gap-2 justify-content-end">
+           <button id="themeToggleBtn" class="btn btn-sm btn-outline-secondary rounded-circle" onclick="toggleTheme()" title="Toggle Dark/Light Mode">☀️</button>              
+           <a href="docs.html" target="_blank" class="btn btn-sm btn-outline-secondary rounded-circle" style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; font-weight: bold; text-decoration: none;" title="Help & Documentation">?</a>
+           <button id="btnNavManagement" class="btn btn-sm btn-outline-primary d-none" onclick="showView('management')">Management</button>
+           <button class="btn btn-sm btn-outline-danger fw-bold" onclick="signOut()">Sign Out</button>        
+        </div>
       </div>
     </div>
-    <div class="text-end">
-          <div class="d-flex gap-2 justify-content-end">
-             <button id="themeToggleBtn" class="btn btn-sm btn-outline-secondary rounded-circle" onclick="toggleTheme()" title="Toggle Dark/Light Mode">☀️</button>              
-             <a href="docs.html" target="_blank" class="btn btn-sm btn-outline-secondary rounded-circle" style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; font-weight: bold; text-decoration: none;" title="Help & Documentation">?</a>
-             <button id="btnNavManagement" class="btn btn-sm btn-outline-primary d-none" onclick="showView('management')">Management</button>
-             <button class="btn btn-sm btn-outline-danger fw-bold" onclick="signOut()">Sign Out</button>        
-          </div>
-        </div>
-  </div>
-  <div id="viewInventory">
-    <div id="searchContainer" class="position-relative mb-4">
+    <div id="searchContainer" class="position-relative">
       <div class="input-group shadow-sm">
         <input type="text" id="searchInput" class="form-control form-control-lg" placeholder="Search Barcode, Serial, Make, Model, Desc, or Notes...">
-	<button class="btn btn-outline-primary px-3 fs-5" type="button" onclick="startCamera('searchInput')" title="Scan with Camera">📷</button>
+        <button class="btn btn-outline-primary px-3 fs-5" type="button" onclick="startCamera('searchInput')" title="Scan with Camera">📷</button>
         <button class="btn btn-outline-secondary" onclick="clearSearch()">Clear</button>
       </div>
       <div id="searchResults" class="list-group hidden"></div>
     </div>
+  </div>
+  <div id="viewInventory">
     <div id="mainContent">
       <div id="gridView">
         <div class="d-flex justify-content-between align-items-center mb-3">
@@ -2169,7 +2188,7 @@ async function fetchData(callback) {
                            ${combinedSnippet.join(' | ')}
                          </div>`;
       }      
-      return `<button class="list-group-item list-group-item-action py-2 px-3" onclick="viewItem('${i.barcode}')">
+      return `<button class="list-group-item list-group-item-action py-2 px-3" onclick="showView('inventory'); viewItem('${i.barcode}')">
           <div class="d-flex justify-content-between align-items-center">
              <div class="d-flex align-items-center flex-grow-1" style="min-width: 0;">
                ${imgHtml}
