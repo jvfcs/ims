@@ -1129,6 +1129,7 @@ git push -u origin main</code></pre>
         </ul>
       </section>
       <div class="mt-5 pt-4 border-top text-center text-muted" style="font-size: 0.85rem; line-height: 1.5; padding-bottom: 2rem;">
+        <p class="mb-1 fw-bold">Last Updated: <span id="docsLastUpdated">March 3, 2026</span></p>
         <p class="mb-1">Developed by Jack Vu</p>
         <p class="mb-0 mt-2"><a href="#" class="text-decoration-none fw-bold" style="color: var(--accent);" onclick="showLegalModal(event)">Terms &amp; Privacy Policy</a></p>
       </div>
@@ -1480,6 +1481,11 @@ git push -u origin main</code></pre>
     document.execCommand('insertHTML', false, imgHTML);
   }
   function saveDocsFile() {
+    // Auto-inject the current date before saving
+    const dateStr = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    const updateEl = document.getElementById('docsLastUpdated');
+    if (updateEl) updateEl.innerText = dateStr;
+
     toggleEditorMode();
     setTimeout(() => {
       const htmlContent = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
