@@ -1681,7 +1681,11 @@ async function fetchData(callback) {
         }
     }
 
-    if (document.getElementById('locFormTitle').innerText === "Add New Location") renderLocGroupsUI("");      
+    if (document.getElementById('locFormTitle').innerText === "Add New Location") {
+        let checkedGroups = [];
+        document.querySelectorAll('.l-group-check:checked').forEach(cb => checkedGroups.push(cb.value));
+        renderLocGroupsUI(checkedGroups.join(','));
+    }      
 
     if (db.users && db.users.length > 0) {
         document.getElementById('bodyUsers').innerHTML = db.users.map(u => `
@@ -2743,12 +2747,16 @@ async function fetchData(callback) {
     renderGrid(); 
     document.getElementById('gridView').classList.remove('hidden'); 
   }
-  function showView(v) { 
-    document.getElementById('viewInventory').classList.toggle('hidden', v !== 'inventory'); 
-    document.getElementById('viewManagement').classList.toggle('hidden', v !== 'management');    
-    applyRolePermissions();
-    clearSearch();    
-    if(v === 'inventory') {
+  function showView(v) { 
+    document.getElementById('viewInventory').classList.toggle('hidden', v !== 'inventory'); 
+    document.getElementById('viewManagement').classList.toggle('hidden', v !== 'management');    
+    applyRolePermissions();
+    clearSearch();    
+    cancelEditItem();
+    cancelEditLoc();
+    cancelEditUser();
+
+    if(v === 'inventory') {
       history.pushState({ view: 'grid' }, "");
       showGrid(true); 
     } else {
@@ -2809,11 +2817,16 @@ async function fetchData(callback) {
         }
     }
   });  
-  function switchMgmt(t, isBack = false) { 
-    if (!isBack) history.pushState({ view: 'mgmt', tab: t }, "");
-    ['mDash','mItem','mLoc','mLog', 'mUser', 'mTheme'].forEach(id => document.getElementById(id).classList.add('hidden'));
-    ['t0','t1','t2','t3', 't4', 't5'].forEach(id => document.getElementById(id).classList.remove('active'));    
-    if(t === 'dash') { 
+  function switchMgmt(t, isBack = false) { 
+    if (!isBack) history.pushState({ view: 'mgmt', tab: t }, "");
+    ['mDash','mItem','mLoc','mLog', 'mUser', 'mTheme'].forEach(id => document.getElementById(id).classList.add('hidden'));
+    ['t0','t1','t2','t3', 't4', 't5'].forEach(id => document.getElementById(id).classList.remove('active'));    
+    
+    cancelEditItem();
+    cancelEditLoc();
+    cancelEditUser();
+
+    if(t === 'dash') { 
       document.getElementById('mDash').classList.remove('hidden'); 
       document.getElementById('t0').classList.add('active'); 
       renderDashboard(); 
