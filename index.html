@@ -573,40 +573,77 @@
                 <option value="">Select an Access Group to view snapshot...</option>
             </select>            
             <div id="dashGroupStats" class="hidden">
+              <h6 class="fw-bold text-primary mb-2 small text-uppercase">Group Stock</h6>
               <div class="row g-3 mb-3">
                 <div class="col-md-4">
                   <div class="stat-card stat-bg-1 shadow-sm h-100">
-                    <p>Unique Active Items</p>
-                    <h3 id="grpStatUnique">0</h3>
+                    <p>Unique Stock Items</p>
+                    <h3 id="grpStatUniqueStock">0</h3>
                   </div>
                 </div>
                 <div class="col-md-4">
                   <div class="stat-card stat-bg-2 shadow-sm h-100">
-                    <p>Total Units on Hand</p>
-                    <h3 id="grpStatTotalUnits">0</h3>
+                    <p>Total Stock Units</p>
+                    <h3 id="grpStatTotalStockUnits">0</h3>
                   </div>
                 </div>
                 <div class="col-md-4">
                   <div class="stat-card stat-bg-3 shadow-sm h-100">
-                    <p>Total Inventory Value</p>
-                    <h3 id="grpStatTotalValue">$0.00</h3>
+                    <p>Total Stock Value</p>
+                    <h3 id="grpStatTotalStockValue">$0.00</h3>
                   </div>
                 </div>
               </div>
               <div class="row g-3 mb-4">
-                <div class="col-md-6">
-                  <div class="stat-card stat-bg-4 shadow-sm h-100">
-                    <p>Group Stock Value</p>
-                    <h3 id="grpStatPhysValue">$0.00</h3>
-                  </div>
-                </div>
-                <div class="col-md-6">
-                  <div class="stat-card stat-bg-5 shadow-sm h-100">
-                    <p>Group Deployed Value</p>
-                    <h3 id="grpStatDepValue">$0.00</h3>
-                  </div>
-                </div>
-              </div>
+                <div class="col-md-6">
+                  <div class="stat-card stat-bg-4 shadow-sm h-100">
+                    <p>Physical Spaces Stock</p>
+                    <h3 id="grpStatPhysStockVal">$0.00</h3>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="stat-card stat-bg-5 shadow-sm h-100">
+                    <p>Mobile Kits Stock</p>
+                    <h3 id="grpStatKitStockVal">$0.00</h3>
+                  </div>
+                </div>
+              </div>
+              
+              <h6 class="fw-bold text-info mb-2 small text-uppercase">Group Deployed</h6>
+              <div class="row g-3 mb-3">
+                <div class="col-md-4">
+                  <div class="stat-card stat-bg-1 shadow-sm h-100" style="opacity: 0.9;">
+                    <p>Unique Deployed Items</p>
+                    <h3 id="grpStatUniqueDep">0</h3>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="stat-card stat-bg-2 shadow-sm h-100" style="opacity: 0.9;">
+                    <p>Total Deployed Units</p>
+                    <h3 id="grpStatTotalDepUnits">0</h3>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="stat-card stat-bg-3 shadow-sm h-100" style="opacity: 0.9;">
+                    <p>Total Deployed Value</p>
+                    <h3 id="grpStatTotalDepValue">$0.00</h3>
+                  </div>
+                </div>
+              </div>
+              <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                  <div class="stat-card stat-bg-4 shadow-sm h-100" style="opacity: 0.9;">
+                    <p>Physical Spaces Deployed</p>
+                    <h3 id="grpStatPhysDepVal">$0.00</h3>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="stat-card stat-bg-5 shadow-sm h-100" style="opacity: 0.9;">
+                    <p>Mobile Kits Deployed</p>
+                    <h3 id="grpStatKitDepVal">$0.00</h3>
+                  </div>
+                </div>
+              </div>
               <h6 class="fw-bold mb-3 border-bottom border-secondary pb-2">Group Locations</h6>
             </div>
             <div class="row g-3" id="dashLocationCardsGroup">
@@ -1567,13 +1604,13 @@ async function fetchData(callback) {
         }
       }
 
-      if (itemGlobalStock > 0) uniqueStockItems++;
-      if (itemGlobalDep > 0) uniqueDepItems++;
+      uniqueStockItems++; // Count all active items for the global stock catalog
+      if (itemGlobalDep > 0) uniqueDepItems++;
 
-      globalStockUnits += itemGlobalStock;
-      globalStockValue += (itemGlobalStock * price);
-      globalDepUnits += itemGlobalDep;
-      globalDepValue += (itemGlobalDep * price);
+      globalStockUnits += itemGlobalStock;
+      globalStockValue += (itemGlobalStock * price);
+      globalDepUnits += itemGlobalDep;
+      globalDepValue += (itemGlobalDep * price);
 
       if (itemGlobalStock <= parseFloat(itm.minStock)) {
         lowStockAlerts.push({
@@ -1696,36 +1733,50 @@ async function fetchData(callback) {
               }
           }
       }
-      let grpUniqueItems = 0, grpTotalUnits = 0, grpTotalValue = 0, grpPhysValue = 0, grpDepValue = 0;
+      let grpUniqueStock = 0, grpTotalStockUnits = 0, grpTotalStockValue = 0, grpPhysStockVal = 0, grpKitStockVal = 0;
+      let grpUniqueDep = 0, grpTotalDepUnits = 0, grpTotalDepValue = 0, grpPhysDepVal = 0, grpKitDepVal = 0;
 
       db.items.filter(i => i.status === 'Active').forEach(itm => {
           const price = parseFloat(itm.price) || 0;
-          let itemTotalInGrp = 0;
-          let itemPhysInGrp = 0;
-          let itemDepInGrp = 0;
+          let itemGrpStock = 0;
+          let itemGrpDep = 0;
 
           grpLocs.forEach(loc => {
-              let stk = getStockBalance(itm.barcode, loc.name, null, 'stock');
-              let dep = getStockBalance(itm.barcode, loc.name, null, 'deployed');
-              if ((stk + dep) > 0) {
-                  itemTotalInGrp += (stk + dep);
-                  itemPhysInGrp += stk;
-                  itemDepInGrp += dep;
-              }
-          });
-          if (itemTotalInGrp > 0) {
-              grpUniqueItems++;
-              grpTotalUnits += itemTotalInGrp;
-              grpTotalValue += (itemTotalInGrp * price);
-              grpPhysValue += (itemPhysInGrp * price);
-              grpDepValue += (itemDepInGrp * price);
-          }
+              let stk = getStockBalance(itm.barcode, loc.name, null, 'stock');
+              let dep = getStockBalance(itm.barcode, loc.name, null, 'deployed');
+              
+              if (stk > 0) {
+                  itemGrpStock += stk;
+                  if (loc.type === 'Mobile Kit' || loc.type === 'Deployable') grpKitStockVal += (stk * price);
+                  else grpPhysStockVal += (stk * price);
+              }
+              if (dep > 0) {
+                  itemGrpDep += dep;
+                  if (loc.type === 'Mobile Kit' || loc.type === 'Deployable') grpKitDepVal += (dep * price);
+                  else grpPhysDepVal += (dep * price);
+              }
+          });
+
+          if (itemGrpStock > 0) grpUniqueStock++;
+          if (itemGrpDep > 0) grpUniqueDep++;
+
+          grpTotalStockUnits += itemGrpStock;
+          grpTotalStockValue += (itemGrpStock * price);
+          grpTotalDepUnits += itemGrpDep;
+          grpTotalDepValue += (itemGrpDep * price);
       });
-      document.getElementById('grpStatUnique').innerText = grpUniqueItems.toLocaleString('en-US');
-      document.getElementById('grpStatTotalUnits').innerText = grpTotalUnits.toLocaleString('en-US');
-      document.getElementById('grpStatTotalValue').innerText = appCurrency + grpTotalValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-      document.getElementById('grpStatPhysValue').innerText = appCurrency + grpPhysValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-      document.getElementById('grpStatDepValue').innerText = appCurrency + grpDepValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+      document.getElementById('grpStatUniqueStock').innerText = grpUniqueStock.toLocaleString('en-US');
+      document.getElementById('grpStatTotalStockUnits').innerText = grpTotalStockUnits.toLocaleString('en-US');
+      document.getElementById('grpStatTotalStockValue').innerText = appCurrency + grpTotalStockValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+      document.getElementById('grpStatPhysStockVal').innerText = appCurrency + grpPhysStockVal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+      document.getElementById('grpStatKitStockVal').innerText = appCurrency + grpKitStockVal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+      
+      document.getElementById('grpStatUniqueDep').innerText = grpUniqueDep.toLocaleString('en-US');
+      document.getElementById('grpStatTotalDepUnits').innerText = grpTotalDepUnits.toLocaleString('en-US');
+      document.getElementById('grpStatTotalDepValue').innerText = appCurrency + grpTotalDepValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+      document.getElementById('grpStatPhysDepVal').innerText = appCurrency + grpPhysDepVal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+      document.getElementById('grpStatKitDepVal').innerText = appCurrency + grpKitDepVal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
       statsBlock.classList.remove('hidden');
       container.innerHTML = html || '<div class="col-12 text-muted small">No locations found for this group.</div>';
   }
