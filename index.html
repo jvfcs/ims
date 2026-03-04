@@ -835,11 +835,14 @@
                   </table>
               </div>
             </div>
-            
-            <div id="locGroupsSummaryContainer" class="mt-4 mb-4 pt-3 border-top">
-                <h6 class="fw-bold text-uppercase letter-spacing-1 text-muted small mb-3">Access Group Summary</h6>
-                <div class="row g-2" id="locGroupsSummaryCards"></div>
-            </div>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mb-3 border-top pt-4 collapse-toggle" style="cursor:pointer;" data-bs-toggle="collapse" data-bs-target="#collapseAccessGroups" aria-expanded="true">
+            <h6 class="fw-bold text-uppercase letter-spacing-1 text-muted small m-0">Access Group Summary</h6>
+            <span class="text-muted fw-bold toggle-icon">▼</span>
+        </div>
+        <div id="collapseAccessGroups" class="collapse show">
+            <div class="row g-2 mb-4" id="locGroupsSummaryCards"></div>
         </div>
       </div>
       <div id="mLog" class="hidden">
@@ -959,10 +962,10 @@
             <span class="text-primary fw-bold toggle-icon">▼</span>
         </div>
         <div id="collapseRoleManager" class="collapse show">
-            <div class="d-flex justify-content-end mb-3">
-              <button class="btn btn-sm btn-outline-primary fw-bold" onclick="createNewRole()">+ New Custom Role</button>
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3">
+              <div class="alert alert-info small py-2 m-0 shadow-sm border-info flex-grow-1">Check the boxes below to instantly grant or revoke capabilities across the entire system.</div>
+              <button class="btn btn-sm btn-outline-primary fw-bold text-nowrap" onclick="createNewRole()">+ New Custom Role</button>
             </div>
-            <div class="alert alert-info small py-2 mb-3 shadow-sm border-info">Check the boxes below to instantly grant or revoke capabilities across the entire system.</div>
             <div class="table-responsive w-100 bg-white rounded border">
               <table class="table table-sm table-bordered align-middle text-center w-100 m-0" style="font-size: 0.85rem;">
                 <thead class="table-light" id="rolesTableHeader">
@@ -1401,6 +1404,7 @@
   });
   async function silentSync() {
     if (isSyncing) return;
+    if (isEditingRoleMatrix) return; // Do not interrupt user while checking boxes
     isSyncing = true;    
     const ind = document.getElementById('syncIndicator');
     if (ind) ind.style.opacity = 1;
@@ -1929,12 +1933,17 @@ async function fetchData(callback) {
           const isAdmin = r.Role.toLowerCase() === 'admin';
           let row = `<tr><td class="text-start fw-bold ${isAdmin ? 'text-danger' : ''}">${r.Role}</td>`;
           perms.forEach(p => {
-              row += `<td><input type="checkbox" class="form-check-input role-cb-${idx}" data-perm="${p}" ${r[p] ? 'checked' : ''} ${isAdmin ? 'disabled' : ''}></td>`;
+              row += `<td><input type="checkbox" class="form-check-input role-cb-${idx}" data-perm="${p}" ${r[p] ? 'checked' : ''} ${isAdmin ? 'disabled' : ''} onchange="pauseSyncForEditing()"></td>`;
           });
           row += `<td><button class="btn btn-sm btn-success fw-bold" onclick="saveRolePerms(${idx}, '${r.Role}')" ${isAdmin ? 'disabled' : ''}>💾</button></td></tr>`;
           tbody += row;
       });
       document.getElementById('rolesTableBody').innerHTML = tbody;
+  }
+
+  let isEditingRoleMatrix = false;
+  function pauseSyncForEditing() {
+      isEditingRoleMatrix = true;
   }
 
   function createNewRole() {
@@ -1961,6 +1970,7 @@ async function fetchData(callback) {
       document.getElementById('loadingOverlay').style.opacity = '1';
       try {
           await apiCall('saveOrUpdateRole', { roleName: roleName, perms: perms });
+          isEditingRoleMatrix = false; // Release lock so syncs resume
           await fetchData();
           document.getElementById('loadingOverlay').style.opacity = '0';
           setTimeout(() => document.getElementById('loadingOverlay').classList.add('hidden'), 300);
