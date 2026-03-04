@@ -1425,24 +1425,25 @@
       }
       if (!currentUserPerms['Global Access']) {
           if (currentUserLocations.length > 0) {
-              const assignedLower = currentUserLocations.map(s => s.toLowerCase());
-              db.locations = db.locations.filter(l => {
-                  if (assignedLower.includes(l.locationName.toLowerCase())) return true;
-                  if (l.lbacGroups) {
-                      const locGroups = l.lbacGroups.split(',').map(g => g.trim().toLowerCase());
-                      if (locGroups.some(g => assignedLower.includes(g))) return true;
-                  }
-                  return false;
-              });
-          } else {
-              db.locations = []; 
-          }
-      }
-      applySorts();
-      softRefreshUI();
-    } catch (e) {
-      console.warn("Silent sync failed:", e);
-    } finally {
+              const assignedLower = currentUserLocations.map(s => s.toLowerCase());
+              db.locations = db.locations.filter(l => {
+                  if (assignedLower.includes(l.locationName.toLowerCase())) return true;
+                  if (l.lbacGroups) {
+                      const locGroups = l.lbacGroups.split(',').map(g => g.trim().toLowerCase());
+                      if (locGroups.some(g => assignedLower.includes(g))) return true;
+                  }
+                  return false;
+              });
+          } else {
+              db.locations = []; 
+          }
+      }
+      applyRolePermissions();
+      applySorts();
+      softRefreshUI();
+    } catch (e) {
+      console.warn("Silent sync failed:", e);
+    } finally {
       isSyncing = false;
       if (ind) ind.style.opacity = 0;
     }
@@ -1966,18 +1967,22 @@ async function fetchData(callback) {
       });
       db.roles[idx] = { Role: roleName, ...perms };
       
-      document.getElementById('loadingOverlay').classList.remove('hidden');
-      document.getElementById('loadingOverlay').style.opacity = '1';
+      const btn = document.querySelector(`.role-cb-${idx}`).closest('tr').querySelector('button');
+      if (btn) {
+          btn.innerText = "⏳";
+          btn.disabled = true;
+      }
+
       try {
           await apiCall('saveOrUpdateRole', { data: { roleName: roleName, perms: perms } });
           isEditingRoleMatrix = false; // Release lock so syncs resume
-          await fetchData();
-          document.getElementById('loadingOverlay').style.opacity = '0';
-          setTimeout(() => document.getElementById('loadingOverlay').classList.add('hidden'), 300);
+          await silentSync(); // Fetches fresh data and runs a soft UI refresh automatically
       } catch (err) {
-          isEditingRoleMatrix = false; // Release lock on error so syncs don't stay frozen
-          document.getElementById('loadingOverlay').style.opacity = '0';
-          setTimeout(() => document.getElementById('loadingOverlay').classList.add('hidden'), 300);
+          isEditingRoleMatrix = false; 
+          if (btn) {
+              btn.innerText = "💾";
+              btn.disabled = false;
+          }
           alert(err.message);
       }
   }
