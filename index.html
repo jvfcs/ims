@@ -37,20 +37,15 @@
       --brand-color: var(--dark-theme);
     }
     ::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; }
-    * { scrollbar-width: none !important; -ms-overflow-style: none !important; box-sizing: border-box; }    
-    
-    /* Removed overflow-x: hidden to restore position: sticky */
+    * { scrollbar-width: none !important; -ms-overflow-style: none !important; box-sizing: border-box; }
     html { -webkit-text-size-adjust: 100%; touch-action: manipulation; }
     body { width: 100%; position: relative; margin: 0; padding: 0; background-color: var(--light-bg); color: var(--light-text); padding-bottom: 50px; font-family: sans-serif; transition: background-color 0.3s ease, color 0.3s ease; -webkit-touch-callout: none; -webkit-font-smoothing: antialiased; }
-    #viewInventory, #viewManagement { overflow-x: hidden; width: 100%; }
-    
+    #viewInventory, #viewManagement { overflow-x: hidden; width: 100%; }    
     @media screen and (max-width: 768px) {
       input.form-control, select.form-select, textarea.form-control, input[type="text"], input[type="number"], input[type="email"] { font-size: 16px !important; }
-      /* Fixed negative margins on bootstrap rows to prevent horizontal scroll without breaking sticky */
       .row { margin-left: 0 !important; margin-right: 0 !important; width: 100% !important; max-width: 100%; display: flex; flex-wrap: wrap; }
       .row > * { padding-left: 0.35rem !important; padding-right: 0.35rem !important; max-width: 100%; }
-    }
-    
+    }    
     .text-muted, .meta-text { color: var(--light-text) !important; opacity: 0.7; }
     .table { color: var(--light-text); --bs-table-color: var(--light-text); }
     .text-primary { color: var(--brand-color) !important; }
@@ -59,15 +54,12 @@
     .btn-outline-primary:hover { background-color: var(--brand-color) !important; color: #fff !important; }
     .nav-tabs .nav-link.active { color: var(--brand-color) !important; font-weight: 900; border-bottom-color: var(--brand-color); }
     .loc-card h6, #selectedLocTitle, #detName, #cameraModalTitle, #loginTitle, #appTitleText, #appShortTitleText, #catalogFormTitle, #locFormTitle, #userFormTitle { color: var(--brand-color) !important; }
-    .card, .loc-card, .item-card, .item-row { background-color: var(--light-card); border: 1px solid rgba(0,0,0,0.05); }
-    
+    .card, .loc-card, .item-card, .item-row { background-color: var(--light-card); border: 1px solid rgba(0,0,0,0.05); }    
     #appContainer {
       padding-bottom: calc(env(safe-area-inset-bottom) + 15px) !important;
       padding-left: env(safe-area-inset-left) !important;
       padding-right: env(safe-area-inset-right) !important;
     }
-    
-    /* Restored padding/margin logic from your working version */
     #stickyHeaderContainer {
       position: sticky;
       top: 0;
@@ -84,8 +76,7 @@
     [data-bs-theme="dark"] #stickyHeaderContainer {
       background-color: var(--dark-bg);
       box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-    }    
-    
+    }
     #syncIndicator {
       bottom: calc(env(safe-area-inset-bottom) + 20px) !important;
     }
@@ -217,6 +208,8 @@
     [data-bs-theme="dark"] .table-hover > tbody > tr.table-warning:hover > td { background-color: rgba(255, 193, 7, 0.25) !important; box-shadow: none !important; }
     [data-bs-theme="dark"] .alert-warning { background-color: rgba(255, 193, 7, 0.15) !important; color: #ffda6a !important; border-color: rgba(255, 193, 7, 0.3) !important; }
     [data-bs-theme="dark"] .alert-warning .text-dark { color: #ffda6a !important; }
+    .modal-backdrop { z-index: 10550 !important; }
+    .modal { z-index: 10600 !important; }
   </style>
 </head>
 <body>
@@ -237,7 +230,8 @@
 <div id="loginOverlay" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #f4f7f6; z-index: 10000; display: flex; align-items: center; justify-content: center;">
   <div class="card p-4 shadow-sm text-center" style="max-width: 400px; width: 90%;">
     <img id="loginLogo" src="" alt="" style="width:300px; height:300px; object-fit:contain; margin: 0 auto; opacity: 0; transition: opacity 0.5s;" class="mb-3">
-    <h3 id="loginTitle" class="fw-bold text-primary mb-3">Login</h3>    
+    <h3 id="loginTitle" class="fw-bold text-primary mb-3">Login</h3>
+    <p id="loginMessage" class="text-muted small mb-4 hidden"></p>    
     <div id="g_id_onload"
          data-context="signin"
          data-ux_mode="popup"
@@ -1003,6 +997,9 @@
               <label class="fw-bold small">Use Short Title on Login?</label>
               <select id="cfg_loginUseShortName" class="form-select form-select-sm mb-1"><option value="Yes">Yes</option><option value="No">No</option></select>
               <small class="text-muted d-block mb-3" style="font-size:0.7rem;">Select 'Yes' to display the Short Title on the login screen instead of the Full Title.</small>
+              <label class="fw-bold small">Login Screen Message</label>
+              <textarea id="cfg_loginMessage" class="form-control form-control-sm mb-1" rows="2" placeholder="Optional notes/instructions for users..."></textarea>
+              <small class="text-muted d-block mb-3" style="font-size:0.7rem;">Displayed right above the Google sign-in button.</small>
               <label class="fw-bold small">Currency Symbol</label>
               <input type="text" id="cfg_currencySymbol" class="form-control form-control-sm mb-1">
               <small class="text-muted d-block mb-3" style="font-size:0.7rem;">Symbol used for total valuations (e.g., $, €, £).</small>
@@ -1287,6 +1284,14 @@
       const useShort = (t.loginUseShortName && t.loginUseShortName.toLowerCase() === 'yes');
       const loginStr = (useShort && t.appShortName) ? t.appShortName : (t.appTitle || "IMS");
       document.getElementById('loginTitle').innerText = loginStr + " Login";
+      
+      const loginMsgEl = document.getElementById('loginMessage');
+      if (t.loginMessage && t.loginMessage.trim() !== "") {
+          loginMsgEl.innerText = t.loginMessage;
+          loginMsgEl.classList.remove('hidden');
+      } else {
+          loginMsgEl.classList.add('hidden');
+      }
 
       if (t.logoUrl) {
           ['loginLogo', 'loadLogo', 'appLogo'].forEach(id => {
@@ -1479,6 +1484,35 @@
       apiCall('saveUserTheme', { data: { theme: newTheme } });
     } catch(e) { console.error("Could not save theme to backend", e); }
   }
+function handleInitialRoute() {
+      const rawHash = window.location.hash.replace('#', '');
+      const hash = rawHash.toLowerCase();
+      if (!hash) {
+          history.replaceState({ view: 'grid' }, "", window.location.pathname);
+          return;
+      }
+      if (['dashboard', 'dash'].includes(hash)) { showView('management'); switchMgmt('dash', true); }
+      else if (['items', 'item'].includes(hash)) { showView('management'); switchMgmt('item', true); }
+      else if (['locations', 'loc'].includes(hash)) { showView('management'); switchMgmt('loc', true); }
+      else if (['logs', 'log'].includes(hash)) { showView('management'); switchMgmt('log', true); }
+      else if (['syslogs', 'syslog'].includes(hash)) { showView('management'); switchMgmt('syslog', true); }
+      else if (['users', 'user'].includes(hash)) { showView('management'); switchMgmt('user', true); }
+      else if (hash === 'theme') { showView('management'); switchMgmt('theme', true); }
+      else if (hash.startsWith('item-')) {
+          let bc = decodeURIComponent(rawHash.substring(5));
+          showView('inventory');
+          viewItem(bc, true);
+      }
+      else if (hash.startsWith('loc-')) {
+          let ln = decodeURIComponent(rawHash.substring(4));
+          const locMatch = db.locations.find(l => l.locationName.toLowerCase() === ln.toLowerCase());
+          showView('inventory');
+          viewLoc(locMatch ? locMatch.locationName : ln, locMatch ? locMatch.type : 'Location', true);
+      }
+      else {
+          history.replaceState({ view: 'grid' }, "", window.location.pathname);
+      }
+  }
 async function fetchData(callback) {
     try {
       const data = await apiCall('getInitialData');      
@@ -1526,8 +1560,8 @@ async function fetchData(callback) {
       renderDashboard(); 
       document.getElementById('loadingOverlay').style.opacity = '0';
       setTimeout(() => document.getElementById('loadingOverlay').classList.add('hidden'), 300);
-      if (callback) callback();       
-      history.replaceState({ view: 'grid' }, ""); 
+      if (callback) callback();        
+      handleInitialRoute(); 
       if (syncTimer) clearInterval(syncTimer);
       syncTimer = setInterval(silentSync, syncIntervalMs); 
     } catch (err) {
@@ -2698,7 +2732,7 @@ async function fetchData(callback) {
   }
   function viewLoc(n, t, isBack = false) { 
     window.scrollTo(0, 0);
-    if (!isBack) history.pushState({ view: 'loc', name: n, type: t }, "");
+    if (!isBack) history.pushState({ view: 'loc', name: n, type: t }, "", "#loc-" + encodeURIComponent(n));
     hideAll(); 
     document.getElementById('locationDetail').classList.remove('hidden');     
     document.getElementById('auditContainer').classList.add('hidden');
@@ -3008,7 +3042,7 @@ async function fetchData(callback) {
   }
   function viewItem(bc, isBack = false) { 
     window.scrollTo(0, 0);
-    if (!isBack) history.pushState({ view: 'item', bc: bc }, "");
+    if (!isBack) history.pushState({ view: 'item', bc: bc }, "", "#item-" + encodeURIComponent(bc));
     hideAll(); 
     activeBc = bc;
     const itm = db.items.find(i => i.barcode === bc);
@@ -3252,7 +3286,7 @@ async function fetchData(callback) {
   }
   function showGrid(isBack = false) { 
     window.scrollTo(0, 0);
-    if (!isBack) history.pushState({ view: 'grid' }, "");
+    if (!isBack) history.pushState({ view: 'grid' }, "", window.location.pathname);
     hideAll(); 
     const gridTgl = document.getElementById('gridStateToggle');
     if (gridTgl) gridTgl.checked = false;
@@ -3277,7 +3311,8 @@ async function fetchData(callback) {
       else if (!currentUserPerms['View Dashboard'] && currentUserPerms['Manage Locations']) defaultTab = 'loc';
       else if (!currentUserPerms['View Dashboard'] && currentUserPerms['Manage Users']) defaultTab = 'user';
       
-      history.pushState({ view: 'mgmt', tab: defaultTab }, "");
+      const hashMap = { dash: 'dashboard', item: 'items', loc: 'locations', log: 'logs', syslog: 'syslogs', user: 'users', theme: 'theme' };
+      history.pushState({ view: 'mgmt', tab: defaultTab }, "", "#" + hashMap[defaultTab]);
       switchMgmt(defaultTab, true);
       setTimeout(updateTabArrows, 50);
     }
@@ -3343,7 +3378,8 @@ async function fetchData(callback) {
   }
   function switchMgmt(t, isBack = false) { 
     window.scrollTo(0, 0);
-    if (!isBack) history.pushState({ view: 'mgmt', tab: t }, "");
+    const hashMap = { dash: 'dashboard', item: 'items', loc: 'locations', log: 'logs', syslog: 'syslogs', user: 'users', theme: 'theme' };
+    if (!isBack) history.pushState({ view: 'mgmt', tab: t }, "", "#" + hashMap[t]);
     ['mDash','mItem','mLoc','mLog', 'mSysLog', 'mUser', 'mTheme'].forEach(id => document.getElementById(id).classList.add('hidden'));
     ['t0','t1','t2','t3', 't4', 't5', 't6'].forEach(id => document.getElementById(id).classList.remove('active'));    
     cancelEditItem();
@@ -3793,7 +3829,7 @@ async function fetchData(callback) {
   function populateThemeForm() {
       if (!db.template) return;
       const t = db.template;
-      const keys = ['appTitle','appShortName','companyName','developerName','loginUseShortName','footerText','adminContact','currencySymbol','logoUrl','defaultImgUrl','googleClientId','driveFolderId','syncInterval','lightTheme','darkTheme','lightBg','lightCard','lightText','darkBg','darkCard','darkText'];
+      const keys = ['appTitle','appShortName','companyName','developerName','loginUseShortName','loginMessage','footerText','adminContact','currencySymbol','logoUrl','defaultImgUrl','googleClientId','driveFolderId','syncInterval','lightTheme','darkTheme','lightBg','lightCard','lightText','darkBg','darkCard','darkText'];
       keys.forEach(k => {
           const el = document.getElementById('cfg_' + k);
           if (el && t[k]) {
@@ -3807,7 +3843,7 @@ async function fetchData(callback) {
       const btn = document.getElementById('btnSaveTheme');
       btn.innerText = "Saving & Applying...";
       btn.disabled = true;
-      const keys = ['appTitle','appShortName','companyName','developerName','loginUseShortName','footerText','adminContact','currencySymbol','logoUrl','defaultImgUrl','googleClientId','driveFolderId','syncInterval','lightTheme','darkTheme','lightBg','lightCard','lightText','darkBg','darkCard','darkText'];
+      const keys = ['appTitle','appShortName','companyName','developerName','loginUseShortName','loginMessage','footerText','adminContact','currencySymbol','logoUrl','defaultImgUrl','googleClientId','driveFolderId','syncInterval','lightTheme','darkTheme','lightBg','lightCard','lightText','darkBg','darkCard','darkText'];
       const payload = {};      
       keys.forEach(k => {
           const el = document.getElementById('cfg_' + k);
