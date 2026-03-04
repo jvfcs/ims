@@ -2570,11 +2570,14 @@ async function fetchData(callback) {
        deployableSection.classList.add('hidden');
     }
   }
-  function viewLoc(n, t, isBack = false) { 
-    window.scrollTo(0, 0);
-    if (!isBack) history.pushState({ view: 'loc', name: n, type: t }, "");
+  function viewLoc(n, t, isBack = false) { 
+    window.scrollTo(0, 0);
+    if (!isBack) history.pushState({ view: 'loc', name: n, type: t }, "");
     hideAll(); 
     document.getElementById('locationDetail').classList.remove('hidden');     
+    document.getElementById('auditContainer').classList.add('hidden');
+    document.getElementById('locControlsContainer').classList.remove('hidden');
+    document.getElementById('itemsContainer').classList.remove('hidden');
     const isGlobal = (n === "Everywhere");
     document.getElementById('selectedLocTitle').innerText = isGlobal ? "Global - Everywhere" : n;    
     if (isGlobal || currentUserRole === 'Viewer') {
@@ -2693,28 +2696,25 @@ async function fetchData(callback) {
     const selectEl = document.getElementById(target === 'from' ? 'actSubLoc' : 'actToSubLoc');    
     const currentVal = selectEl.value;
     const spots = new Set();
-    const stockBySpot = {};    
+    
     db.logs.forEach(l => {
        if (l.toLoc === locName && l.subLoc) spots.add(l.subLoc);
        if (l.fromLoc === locName && l.subLoc) spots.add(l.subLoc);       
-       if (l.barcode === activeBc) {
-           const spotKey = l.subLoc || "Default";
-           if (!stockBySpot[spotKey]) stockBySpot[spotKey] = 0;
-           if (l.toLoc === locName) stockBySpot[spotKey] += l.quantity;
-           if (l.fromLoc === locName) stockBySpot[spotKey] -= Math.abs(l.quantity);
-       }
     });
+    
     let options = "";    
-    let defStock = stockBySpot["Default"] || 0;
+    let defStock = getStockBalance(activeBc, locName, "", currentItemContextState);
     let defLabel = defStock > 0 ? `Default (No Specific Spot) [Stock: ${defStock}]` : `Default (No Specific Spot)`;
     options += `<option value="Default">${defLabel}</option>`;
+    
     Array.from(spots).sort().forEach(spot => {
-        let stk = stockBySpot[spot] || 0;
+        let stk = getStockBalance(activeBc, locName, spot, currentItemContextState);
         let label = stk > 0 ? `${spot} [Stock: ${stk}]` : spot;
         options += `<option value="${spot}">${label}</option>`;
     });    
     options += `<option value="NEW_SPOT">+ Add New Spot/Bin...</option>`;
     selectEl.innerHTML = options;    
+    
     if (Array.from(selectEl.options).some(o => o.value === currentVal)) {
         selectEl.value = currentVal;
     } else {
@@ -2731,7 +2731,7 @@ async function fetchData(callback) {
         newSpotContainer.classList.add('hidden');
     }
   }
-  function getAvailableSerials(barcode, location, subLoc = "", state = currentContextState) {
+  function getAvailableSerials(barcode, location, subLoc = "", state = currentItemContextState) {
     const serials = {};
     db.logs.filter(l => l.barcode === barcode && l.serial).forEach(l => {
       const s = l.serial.toUpperCase();
@@ -2976,6 +2976,10 @@ async function fetchData(callback) {
         document.getElementById('btnMove').innerText = 'MOVE';
         document.getElementById('btnDeploy').innerText = 'DEPLOY';
     }
+    
+    updateAvailableSpots('from');
+    updateAvailableSpots('to');
+    updateAvailableSerials();
   }
 
   function handleDeployClick() {
