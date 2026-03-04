@@ -1340,6 +1340,7 @@
     if(searchInput) searchInput.addEventListener('input', runSearch);
     try {
         const tConfig = await apiCall('getTemplateConfig');
+        db.template = tConfig;
         applyTemplateVars(tConfig);
     } catch(e) { console.warn("Failed to load pre-boot template."); }
     const savedEmail = localStorage.getItem('ims_user_email');
