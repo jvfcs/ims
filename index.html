@@ -488,7 +488,7 @@
       <div class="position-relative tabs-scroll-wrapper mb-4">
         <button class="tab-scroll-btn left-arrow" id="scrollLeftBtn" onclick="scrollTabs(-150)">&#9664;</button>
         <ul class="nav nav-tabs flex-nowrap hide-scroll" id="mgmtTabs" role="tablist">
-          <li class="nav-item"><a class="nav-link active text-nowrap" id="t0" onclick="switchMgmt('dash')">Dashboard</a></li>
+          <li class="nav-item" id="tabDashboard"><a class="nav-link active text-nowrap" id="t0" onclick="switchMgmt('dash')">Dashboard</a></li>
           <li class="nav-item"><a class="nav-link text-nowrap" id="t1" onclick="switchMgmt('item')">Items</a></li>
           <li class="nav-item"><a class="nav-link text-nowrap" id="t2" onclick="switchMgmt('loc')">Locations</a></li>
           <li class="nav-item" id="tabLogs"><a class="nav-link text-nowrap" id="t3" onclick="switchMgmt('log')">Logs</a></li>
@@ -827,7 +827,7 @@
   <strong>Admin:</strong> Full system access, including User Access and Theme management.<br>
   <strong>Sub-Admin:</strong> Global access to manage all Items, Locations, view Logs, and manage non-admin Users. Cannot manage Theme.<br>
   <strong>Manager:</strong> Can manage Items, Locations, and Audits, but ONLY for their assigned locations. Cannot manage Users or Theme.<br>
-  <strong>Operator:</strong> Can Check-In, Check-Out, and Move inventory, but ONLY for their assigned locations. No access to management tab.<br>
+  <strong>Operator:</strong> Can Check-In, Check-Out, Move inventory, and manage Items/Locations. No access to Dashboard, Logs, or Users. Restricted to assigned locations.<br>
   <strong>Viewer:</strong> Read-only access to view inventory levels ONLY for their assigned locations. No access to management tab.
 </div>
           </div>
@@ -1036,7 +1036,7 @@
       'Admin': 'Full system access, including User Access and Theme management.',
       'Sub-Admin': 'Global access to manage all Items, Locations, view Logs, and manage non-admin Users. Cannot manage Theme.',
       'Manager': 'Can manage Items, Locations, and Audits, but ONLY for their assigned locations. Cannot manage Users or Theme.',
-      'Operator': 'Can Check-In, Check-Out, and Move inventory, but ONLY for their assigned locations. No access to management tab.',
+      'Operator': 'Can Check-In, Check-Out, Move inventory, and manage Items/Locations. No access to Dashboard, Logs, or Users. Restricted to assigned locations.',
       'Viewer': 'Read-only access to view inventory levels ONLY for their assigned locations. No access to management tab.'
   };
   function updateRoleDescription() {
@@ -1249,22 +1249,26 @@
   }
   function applyRolePermissions() {
       const isMgmtActive = !document.getElementById('viewManagement').classList.contains('hidden');
-      if (currentUserRole === 'Admin' || currentUserRole === 'Sub-Admin' || currentUserRole === 'Manager') {
+      if (['Admin', 'Sub-Admin', 'Manager', 'Operator'].includes(currentUserRole)) {
           document.getElementById('btnNavManagement').classList.toggle('d-none', isMgmtActive);
           document.getElementById('btnEditLocInner').classList.remove('hidden');
           document.getElementById('btnEditItemInner').classList.remove('hidden');
           document.getElementById('btnCsvLoc').classList.remove('hidden'); 
+          document.getElementById('btnAuditLocInner').classList.remove('hidden');
       } else {
           document.getElementById('btnNavManagement').classList.add('d-none');
           document.getElementById('btnEditLocInner').classList.add('hidden');
           document.getElementById('btnEditItemInner').classList.add('hidden');
           document.getElementById('btnCsvLoc').classList.add('hidden'); 
-      }
-      if (['Admin', 'Sub-Admin', 'Manager', 'Operator'].includes(currentUserRole)) {
-          document.getElementById('btnAuditLocInner').classList.remove('hidden');
-      } else {
           document.getElementById('btnAuditLocInner').classList.add('hidden');
       }
+      
+      const tabDash = document.getElementById('tabDashboard');
+      if (tabDash) {
+          if (currentUserRole === 'Operator') tabDash.classList.add('d-none');
+          else tabDash.classList.remove('d-none');
+      }
+
       if (currentUserRole === 'Admin') {
           document.getElementById('tabUserAccess').classList.remove('d-none');
           document.getElementById('tabTheme').classList.remove('d-none');
@@ -2584,11 +2588,7 @@ async function fetchData(callback) {
         document.getElementById('btnEditLocInner').classList.add('hidden');
         document.getElementById('btnAuditLocInner').classList.add('hidden');
     } else {
-        if (currentUserRole === 'Operator') {
-            document.getElementById('btnEditLocInner').classList.add('hidden');
-        } else {
-            document.getElementById('btnEditLocInner').classList.remove('hidden');
-        }
+        document.getElementById('btnEditLocInner').classList.remove('hidden');
         document.getElementById('btnAuditLocInner').classList.remove('hidden');
     }
     const locInfo = db.locations.find(l => l.locationName === n);
@@ -2907,7 +2907,7 @@ async function fetchData(callback) {
     document.getElementById('detCat').innerText = itm.category;
     document.getElementById('detImg').src = itm.imgFile || itm.img || getPlaceholder(); 
     document.getElementById('detSpecsArea').innerHTML = itm.specs ? `<a href="${itm.specs}" target="_blank" class="small fw-bold text-primary">View Technical Specs</a>` : "";    
-    if (currentUserRole === 'Admin' || currentUserRole === 'Sub-Admin' || currentUserRole === 'Manager') {
+    if (['Admin', 'Sub-Admin', 'Manager', 'Operator'].includes(currentUserRole)) {
         document.getElementById('btnEditItemInner').classList.remove('hidden');
     } else {
         document.getElementById('btnEditItemInner').classList.add('hidden');
@@ -3173,8 +3173,9 @@ async function fetchData(callback) {
       history.pushState({ view: 'grid' }, "");
       showGrid(true); 
     } else {
-      history.pushState({ view: 'mgmt', tab: 'dash' }, "");
-      switchMgmt('dash', true);
+      const defaultTab = currentUserRole === 'Operator' ? 'item' : 'dash';
+      history.pushState({ view: 'mgmt', tab: defaultTab }, "");
+      switchMgmt(defaultTab, true);
       setTimeout(updateTabArrows, 50);
     }
   }
@@ -3461,14 +3462,30 @@ async function fetchData(callback) {
           }
       }
       const btn = document.getElementById('btnSaveLoc');
-      const originalText = btn.innerText;
-      btn.disabled = true;
-      btn.innerText = "Processing Data...";
-      const fileInput = document.getElementById('mLImgFile');
-      const file = fileInput.files[0];
-      let checkedGroups = [];
-      document.querySelectorAll('.l-group-check:checked').forEach(cb => checkedGroups.push(cb.value));
-      let payload = {
+      const originalText = btn.innerText;
+      btn.disabled = true;
+      btn.innerText = "Processing Data...";
+      const fileInput = document.getElementById('mLImgFile');
+      const file = fileInput.files[0];
+      let checkedGroups = [];
+      document.querySelectorAll('.l-group-check:checked').forEach(cb => checkedGroups.push(cb.value));
+
+      if (!['Admin', 'Sub-Admin'].includes(currentUserRole)) {
+          if (checkedGroups.length === 0) {
+              btn.disabled = false;
+              btn.innerText = originalText;
+              return alert("Access Restriction: You must select at least one Access Group (LBAC) so you do not lose access to this location.");
+          }
+          const userLocsLower = currentUserLocations.map(s => s.toLowerCase());
+          const hasValidGroup = checkedGroups.some(g => userLocsLower.includes(g.toLowerCase()));
+          if (!hasValidGroup) {
+              btn.disabled = false;
+              btn.innerText = originalText;
+              return alert("Safety Net: You created/selected a new Access Group that is not currently assigned to your User Profile. You must include at least one Access Group you already own to maintain access to this location.");
+          }
+      }
+
+      let payload = {
           oldName: (mode === 'edit') ? window.editingLocName : null,
           name: newLocName,
           type: document.getElementById('mLtype').value,
