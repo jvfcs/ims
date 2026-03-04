@@ -35,13 +35,14 @@
         [data-bs-theme="dark"] {
       --brand-color: var(--dark-theme);
     }
-    html, body { overflow-x: hidden !important; width: 100%; max-width: 100%; margin: 0; padding: 0; position: relative; }
-    body { background-color: var(--light-bg); color: var(--light-text); padding-bottom: 50px; font-family: sans-serif; transition: background-color 0.3s ease, color 0.3s ease; -webkit-touch-callout: none; }
-    #appContainer { overflow-x: hidden !important; max-width: 100%; }
+    html { overflow-x: hidden !important; overflow-y: scroll; -webkit-text-size-adjust: 100%; }
+    body { overflow-x: hidden !important; width: 100%; position: relative; margin: 0; padding: 0; background-color: var(--light-bg); color: var(--light-text); padding-bottom: 50px; font-family: sans-serif; transition: background-color 0.3s ease, color 0.3s ease; -webkit-touch-callout: none; }
+    *, *::before, *::after { box-sizing: border-box; }
+    #appContainer { overflow-x: hidden !important; width: 100%; max-width: 100%; }
     @media screen and (max-width: 768px) {
       input.form-control, select.form-select, textarea.form-control, input[type="text"], input[type="number"], input[type="email"] { font-size: 16px !important; }
-      .row { margin-left: 0 !important; margin-right: 0 !important; width: 100%; }
-      .row > * { padding-left: 0.25rem !important; padding-right: 0.25rem !important; }
+      .row { margin-left: 0 !important; margin-right: 0 !important; width: 100% !important; max-width: 100%; display: flex; flex-wrap: wrap; }
+      .row > * { padding-left: 0.35rem !important; padding-right: 0.35rem !important; max-width: 100%; }
     }
     .text-muted, .meta-text { color: var(--light-text) !important; opacity: 0.7; }
     .table { color: var(--light-text); --bs-table-color: var(--light-text); }
@@ -81,7 +82,7 @@
     .dynamic-grid { display: grid; gap: 15px; grid-template-columns: repeat(2, 1fr); }
     @media (min-width: 768px) { .dynamic-grid { grid-template-columns: repeat(4, 1fr); } }
     @media (min-width: 1200px) { .dynamic-grid { grid-template-columns: repeat(6, 1fr); } }    
-    .loc-card, .item-card { background: var(--light-card); padding: 15px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.05); cursor: pointer; transition: 0.2s; }
+    .loc-card, .item-card { background: var(--light-card); padding: 15px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.05); cursor: pointer; transition: 0.2s; word-wrap: break-word; overflow: hidden; }
     .loc-card:hover, .item-card:hover { transform: translateY(-3px); box-shadow: 0 6px 15px rgba(0,0,0,0.1); }
     .loc-card h6 { margin: 0; font-weight: 700; color: inherit; font-size: 0.95rem; }
     .meta-text { font-size: 0.7rem; color: #7f8c8d; margin-top: 5px; line-height: 1.3; }    
