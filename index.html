@@ -281,13 +281,23 @@
   <div id="viewInventory">
     <div id="mainContent">
       <div id="gridView">
-        <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center mb-3 gap-3">
           <h6 class="fw-bold text-muted m-0 text-uppercase letter-spacing-1">Locations Overview</h6>
-          <select id="sortSelect" class="form-select form-select-sm w-auto" onchange="renderGrid()">
-            <option value="az">Name A-Z</option>
-            <option value="qtyDesc">Qty High-Low</option>
-            <option value="qtyAsc">Qty Low-High</option>
-          </select>
+          <div class="d-flex align-items-center justify-content-between gap-3">
+            <div class="switch-container">
+              <span class="small" style="font-size:0.7rem;">STOCK</span>
+              <label class="toggle-switch">
+                <input type="checkbox" id="gridStateToggle" onchange="renderGrid()">
+                <span class="slider"></span>
+              </label>
+              <span class="small text-info" style="font-size:0.7rem;">DEPLOYED</span>
+            </div>
+            <select id="sortSelect" class="form-select form-select-sm w-auto" onchange="renderGrid()">
+              <option value="az">Name A-Z</option>
+              <option value="qtyDesc">Qty High-Low</option>
+              <option value="qtyAsc">Qty Low-High</option>
+            </select>
+          </div>
         </div>        
         <div class="d-flex justify-content-between align-items-center mt-2 mb-3 border-bottom pb-2 collapse-toggle" style="cursor:pointer;" data-bs-toggle="collapse" data-bs-target="#collapsePhysical" aria-expanded="true">
             <h6 class="fw-bold text-secondary m-0">Physical Spaces & Global</h6>
@@ -2536,32 +2546,62 @@ async function fetchData(callback) {
   }
   function renderGrid() {
     const sort = document.getElementById('sortSelect').value;    
+    const gridStateToggle = document.getElementById('gridStateToggle');
+    const gridState = gridStateToggle && gridStateToggle.checked ? 'deployed' : 'stock';
+
     let data = db.locations.filter(loc => loc.status === 'Active').map(loc => {
       let qty = 0, last = null;
       db.logs.forEach(l => {
-        const isStockIn = ["In", "Move-In", "Return-In", "Audit-In"].includes(l.type);
-        const isStockOut = ["Out", "Move-Out", "Deploy-Out", "Audit-Out"].includes(l.type);
-        if (l.toLoc === loc.locationName && isStockIn) { qty += Math.abs(l.quantity); last = l; }
-        if (l.fromLoc === loc.locationName && isStockOut) { qty -= Math.abs(l.quantity); last = l; }
+        let isIn = false, isOut = false;
+        if (gridState === 'stock') {
+            isIn = ["In", "Move-In", "Return-In", "Audit-In"].includes(l.type);
+            isOut = ["Out", "Move-Out", "Deploy-Out", "Audit-Out"].includes(l.type);
+        } else {
+            isIn = ["Deploy-In"].includes(l.type);
+            isOut = ["Return-Out", "Consume-Out"].includes(l.type);
+        }
+        
+        if (l.toLoc === loc.locationName && isIn) { qty += Math.abs(l.quantity); last = l; }
+        if (l.fromLoc === loc.locationName && isOut) { qty -= Math.abs(l.quantity); last = l; }
       });
       return { ...loc, qty, last };
     });    
+
     let evQty = 0, evLast = null;
     db.logs.forEach(l => {
         const itm = db.items.find(itm => itm.barcode === l.barcode);
         if (itm && itm.status === 'Active') {
-          if (["In", "Move-In", "Return-In", "Audit-In"].includes(l.type)) evQty += Math.abs(l.quantity);
-          if (["Out", "Move-Out", "Deploy-Out", "Audit-Out"].includes(l.type)) evQty -= Math.abs(l.quantity);
-          evLast = l;
+          let isIn = false, isOut = false;
+          if (gridState === 'stock') {
+              isIn = ["In", "Move-In", "Return-In", "Audit-In"].includes(l.type);
+              isOut = ["Out", "Move-Out", "Deploy-Out", "Audit-Out"].includes(l.type);
+          } else {
+              isIn = ["Deploy-In"].includes(l.type);
+              isOut = ["Return-Out", "Consume-Out"].includes(l.type);
+          }
+          if (isIn) { evQty += Math.abs(l.quantity); evLast = l; }
+          if (isOut) { evQty -= Math.abs(l.quantity); evLast = l; }
         }
     });
+
     data.push({ locationName: "Everywhere", type: "Global", deployType: "Physical Space", qty: evQty, last: evLast });
+
     if (sort === "az") {
-      data.sort((a,b) => a.locationName.localeCompare(b.locationName));    }
+      data.sort((a,b) => a.locationName.localeCompare(b.locationName));
+    }
     if (sort === "qtyDesc") data.sort((a,b) => b.qty - a.qty);
     if (sort === "qtyAsc") data.sort((a,b) => a.qty - b.qty);    
+
     const buildCard = (l) => {
-      let meta = l.last ? `${(l.last.toLoc === l.locationName || l.locationName === "Everywhere") ? "Added" : "Removed"} ${fmtTime(l.last.timestamp)}<br>by ${getUserDisplayName(l.last.userEmail)}` : "No activity";
+      let actionStr = "Added";
+      if (l.last) {
+          if (l.locationName === "Everywhere") {
+              actionStr = ["In", "Move-In", "Return-In", "Audit-In", "Deploy-In"].includes(l.last.type) ? "Added" : "Removed";
+          } else {
+              actionStr = l.last.toLoc === l.locationName ? "Added" : "Removed";
+          }
+      }
+      let meta = l.last ? `${actionStr} ${fmtTime(l.last.timestamp)}<br>by ${getUserDisplayName(l.last.userEmail)}` : "No activity";
       let imgHtml = (l.imgFile || l.img) ? `<img src="${l.imgFile || l.img}">` : `<div class="d-flex align-items-center justify-content-center bg-light text-secondary rounded mb-2" style="height:120px; font-size:3rem;">${(l.deployType==='Deployable' || l.deployType==='Mobile Kit')?'🧰':'🏢'}</div>`;
       if (l.locationName === "Everywhere") imgHtml = `<div class="d-flex align-items-center justify-content-center bg-light text-primary rounded mb-2" style="height:120px; font-size:3rem;">🌎</div>`;
       let deployTag = (l.deployType === 'Deployable' || l.deployType === 'Mobile Kit') ? `<div class="cat-badge bg-info text-dark mt-1 mb-2">Mobile Kit: ${l.deployLoc || 'Not Deployed'}</div>` : '';
