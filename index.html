@@ -38,9 +38,9 @@
     }
     ::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; }
     * { scrollbar-width: none !important; -ms-overflow-style: none !important; box-sizing: border-box; }    
-    html { overflow-x: hidden !important; -webkit-text-size-adjust: 100%; touch-action: manipulation; }
-    body { overflow-x: hidden !important; width: 100%; position: relative; margin: 0; padding: 0; background-color: var(--light-bg); color: var(--light-text); padding-bottom: 50px; font-family: sans-serif; transition: background-color 0.3s ease, color 0.3s ease; -webkit-touch-callout: none; -webkit-font-smoothing: antialiased; }
-    #appContainer { overflow-x: hidden !important; width: 100%; max-width: 100vw; position: relative; }
+    html { overflow-x: clip !important; -webkit-text-size-adjust: 100%; touch-action: manipulation; }
+    body { overflow-x: clip !important; width: 100%; position: relative; margin: 0; padding: 0; background-color: var(--light-bg); color: var(--light-text); padding-bottom: 50px; font-family: sans-serif; transition: background-color 0.3s ease, color 0.3s ease; -webkit-touch-callout: none; -webkit-font-smoothing: antialiased; }
+    #appContainer { width: 100%; max-width: 100vw; position: relative; }
     @media screen and (max-width: 768px) {
       input.form-control, select.form-select, textarea.form-control, input[type="text"], input[type="number"], input[type="email"] { font-size: 16px !important; }
       .row { margin-left: 0 !important; margin-right: 0 !important; width: 100% !important; max-width: 100%; display: flex; flex-wrap: wrap; }
@@ -61,6 +61,7 @@
       padding-right: env(safe-area-inset-right) !important;
     }
     #stickyHeaderContainer {
+      position: -webkit-sticky;
       position: sticky;
       top: 0;
       z-index: 1040;
@@ -168,6 +169,8 @@
       box-shadow: 0 -4px 15px rgba(0,0,0,0.3);
     }
     #gdprBanner.visible { transform: translateY(0); }
+    .modal { z-index: 10700 !important; }
+    .modal-backdrop { z-index: 10650 !important; }
     .modal { z-index: 10700 !important; }
     .modal-backdrop { z-index: 10650 !important; }
     [data-bs-theme="dark"] .text-dark { color: var(--dark-text) !important; }
