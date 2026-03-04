@@ -202,7 +202,7 @@
     .collapse-toggle[aria-expanded="true"] .toggle-icon { transform: rotate(180deg); }
     .toggle-icon { display: inline-block; transition: transform 0.2s ease; }    
     #syncIndicator { position: fixed; bottom: 20px; right: 20px; background: rgba(0,0,0,0.75); color: white; padding: 6px 14px; border-radius: 20px; font-size: 0.8rem; z-index: 9999; opacity: 0; transition: opacity 0.5s; pointer-events: none; display: flex; align-items: center; gap: 8px; }
-    #loadingOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #f4f7f6; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.3s ease; }
+    #loadingOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #f4f7f6; z-index: 1045; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.3s ease; }
     [data-bs-theme="dark"] #loadingOverlay { background-color: #121212; }    
     .table-warning { transition: background-color 0.3s ease; }
     [data-bs-theme="dark"] .table-warning { --bs-table-bg: rgba(255, 193, 7, 0.15); --bs-table-hover-bg: rgba(255, 193, 7, 0.25); color: var(--dark-text) !important; }
@@ -227,7 +227,7 @@
         <button class="btn btn-danger fw-bold w-100" onclick="stopCamera()">Close Camera</button>
     </div>
 </div>
-<div id="loginOverlay" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #f4f7f6; z-index: 10000; display: flex; align-items: center; justify-content: center;">
+<div id="loginOverlay" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #f4f7f6; z-index: 1040; display: flex; align-items: center; justify-content: center;">
   <div class="card p-4 shadow-sm text-center" style="max-width: 400px; width: 90%;">
     <img id="loginLogo" src="" alt="" style="width:300px; height:300px; object-fit:contain; margin: 0 auto; opacity: 0; transition: opacity 0.5s;" class="mb-3">
     <h3 id="loginTitle" class="fw-bold text-primary mb-3">Login</h3>    
