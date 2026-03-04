@@ -102,19 +102,21 @@
   // IMPORTANT: REPLACE THE URL BELOW WITH YOUR NEW GOOGLE APPS SCRIPT WEB APP URL
   var GAS_URL = "https://script.google.com/macros/s/AKfycbwaSuyBWnqziZSdrIHCqNESBDAhciig8SSDxI3wh4nc2Fgb70koPRb7zfCWwlOu0Zf-Ew/exec";
 
-  document.addEventListener("DOMContentLoaded", async function() {
+  document.addEventListener("DOMContentLoaded", function() {
     checkGDPR();
-    try {
-        const tConfig = await apiCall('getTemplateConfig');
-        db.template = tConfig; // Saved for the privacy modal
+    
+    // Fetch template in the background without holding up the boot process
+    apiCall('getTemplateConfig').then(tConfig => {
+        db.template = tConfig;
         applyTemplateVars(tConfig);
-    } catch(e) { console.warn("Failed to load pre-boot template."); }
+    }).catch(e => console.warn("Failed to load pre-boot template."));
     
     const savedEmail = localStorage.getItem('ims_user_email');
-    if (savedEmail) bootApp(savedEmail);
-    else {
-      document.getElementById('loadingOverlay').classList.add('hidden');
-      document.getElementById('loginOverlay').classList.remove('hidden');
+    if (savedEmail) {
+        bootApp(savedEmail);
+    } else {
+        document.getElementById('loadingOverlay').classList.add('hidden');
+        document.getElementById('loginOverlay').classList.remove('hidden');
     }
   });
 
@@ -155,10 +157,16 @@
     document.getElementById('loadingOverlay').style.opacity = '1';
     
     try {
-      // 1. Fetch the hidden HTML/CSS/JS payload from GAS
-      const payloadHtml = await apiCall('getSecureApp');
+      // Fetch the app code AND the database at the exact same time
+      const [payloadHtml, initialData] = await Promise.all([
+         apiCall('getSecureApp'),
+         apiCall('getInitialData')
+      ]);
       
-      // 2. Load it into a temporary memory container
+      // Store db globally so the injected code doesn't have to ask the server again
+      window._PRELOADED_DB = initialData; 
+      
+      // Load it into a temporary memory container
       const temp = document.createElement('div');
       temp.innerHTML = payloadHtml;
       
