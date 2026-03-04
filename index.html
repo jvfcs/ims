@@ -1959,27 +1959,28 @@ async function fetchData(callback) {
   }
 
   async function saveRolePerms(idx, roleName) {
-      const checkboxes = document.querySelectorAll(`.role-cb-${idx}`);
-      let perms = {};
-      checkboxes.forEach(cb => {
-          perms[cb.getAttribute('data-perm')] = cb.checked;
-      });
-      db.roles[idx] = { Role: roleName, ...perms };
-      
-      document.getElementById('loadingOverlay').classList.remove('hidden');
-      document.getElementById('loadingOverlay').style.opacity = '1';
-      try {
-          await apiCall('saveOrUpdateRole', { roleName: roleName, perms: perms });
-          isEditingRoleMatrix = false; // Release lock so syncs resume
-          await fetchData();
-          document.getElementById('loadingOverlay').style.opacity = '0';
-          setTimeout(() => document.getElementById('loadingOverlay').classList.add('hidden'), 300);
-      } catch (err) {
-          document.getElementById('loadingOverlay').style.opacity = '0';
-          setTimeout(() => document.getElementById('loadingOverlay').classList.add('hidden'), 300);
-          alert(err.message);
-      }
-  }
+      const checkboxes = document.querySelectorAll(`.role-cb-${idx}`);
+      let perms = {};
+      checkboxes.forEach(cb => {
+          perms[cb.getAttribute('data-perm')] = cb.checked;
+      });
+      db.roles[idx] = { Role: roleName, ...perms };
+      
+      document.getElementById('loadingOverlay').classList.remove('hidden');
+      document.getElementById('loadingOverlay').style.opacity = '1';
+      try {
+          await apiCall('saveOrUpdateRole', { data: { roleName: roleName, perms: perms } });
+          isEditingRoleMatrix = false; // Release lock so syncs resume
+          await fetchData();
+          document.getElementById('loadingOverlay').style.opacity = '0';
+          setTimeout(() => document.getElementById('loadingOverlay').classList.add('hidden'), 300);
+      } catch (err) {
+          isEditingRoleMatrix = false; // Release lock on error so syncs don't stay frozen
+          document.getElementById('loadingOverlay').style.opacity = '0';
+          setTimeout(() => document.getElementById('loadingOverlay').classList.add('hidden'), 300);
+          alert(err.message);
+      }
+  }
 
   function updateRoleDropdown() {
       const uRoleSelect = document.getElementById('uRole');
