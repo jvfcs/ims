@@ -662,20 +662,24 @@
         </ul>
       </section>
       <section id="roles" class="doc-section">
-        <h2>Roles &amp; Permissions</h2>        
+        <h2>Roles &amp; Permissions (Dynamic RBAC)</h2>        
         <div class="callout border-danger mb-4">
           <strong class="text-danger">⚠️ The "First Login" Security Trap (Admin Bootstrapping)</strong><br>
           <span class="text-muted small">When you deploy a brand-new, completely blank database, <strong>the very first Google account to log into the app is permanently and automatically granted the Admin role.</strong> Do not share your live URL with employees or testers until you have successfully logged in yourself to claim the Admin seat!</span>
         </div>
-        <p>IMS utilizes strict role-based access control to ensure users only see what they need to see.</p>
+        <p>IMS utilizes a <strong>Dynamic Role-Based Access Control (RBAC)</strong> engine. Instead of hardcoding permissions, Admins can create unlimited custom roles and instantly modify their capabilities using the visual matrix in the Users tab.</p>
         
-        <ul class="list-group list-group-flush mb-3">
-          <li class="list-group-item"><strong>Admin:</strong> Full system access. Can edit users, change system themes, view all logs, and manage all inventory. <em>Note: Only full Admins can modify Barcodes or assign new Admin/Sub-Admin accounts. To prevent lockouts, Admins cannot demote or disable other existing Admin accounts (they can only update their display names).</em></li>
-          <li class="list-group-item"><strong>Sub-Admin:</strong> Global access to manage all inventory, locations, view logs, and manage non-admin Users. Cannot manage System Theme, and cannot create, edit, or disable Admin or Sub-Admin accounts.</li>
-          <li class="list-group-item"><strong>Manager:</strong> <span class="badge-role">Restricted</span> Can manage inventory and perform audits, but <strong>only</strong> for their assigned locations. Cannot manage Users or System Theme.</li>
-          <li class="list-group-item"><strong>Operator:</strong> <span class="badge-role">Restricted</span> Can check-in, check-out, and move items, and perform audits. Cannot access the Management dashboard. Restricted to assigned locations.</li>
-          <li class="list-group-item"><strong>Viewer:</strong> <span class="badge-role">Restricted</span> Read-only access to view stock levels for their assigned locations. Cannot perform any transactions.</li>
+        
+        <h3 class="mt-4">The Admin Safety Net</h3>
+        <p>To prevent accidental system lockouts, the core <strong>Admin</strong> role is hardcoded with a permanent safety net.</p>
+        <ul>
+          <li>The Admin role cannot have its permissions unchecked in the matrix.</li>
+          <li>Only the core Admin can assign the Admin role to another user.</li>
+          <li>Only the core Admin can disable or demote another Admin.</li>
         </ul>
+        
+        <h3 class="mt-4">Global Access vs. LBAC</h3>
+        <p>In the Role Matrix, the very first checkbox is <strong>Global Access</strong>. If this is checked, the user bypasses all location restrictions and can see/manage the entire company's inventory. If this is unchecked, the user is subject to Location-Based Access Control (LBAC) and must be explicitly assigned to specific locations or groups by an Admin.</p>
       </section>
       <section id="lbac" class="doc-section">
         <h2>Location-Based Access Control (LBAC)</h2>
@@ -692,12 +696,14 @@
         </ul>
       </section>
       <section id="dashboard" class="doc-section">
-        <h2>Dashboard &amp; Alerts</h2>
-        <p>The Dashboard (found in the Management tab) provides a real-time financial and operational snapshot of the inventory.</p>
+        <h2>Dashboard &amp; Global State Toggle</h2>
+        <p>The Management view features a unified <strong>State Toggle (Stock vs Deployed)</strong> at the top right of the screen. Flipping this switch instantly recalculates the entire dashboard, the Items catalog, and the Locations catalog to reflect the chosen state.</p>
+        
+        <p>The Dashboard provides a real-time financial and operational snapshot based on the active toggle:</p>
         <img src="docs/screenshot-dashboard.png" class="doc-screenshot" alt="IMS Dashboard Snapshot">
         <ul>
-          <li><strong>Global Snapshot:</strong> Visible to Admins and Sub-Admins. Valuations are strictly separated into <strong>Global Stock</strong> (items sitting on shelves) and <strong>Global Deployed</strong> (items currently active in the field). It further breaks down values by Physical Spaces vs Mobile Kits.</li>
-          <li><strong>Location Groups Snapshot:</strong> Allows you to select an Access Group from a dropdown (e.g., "Arizona") and instantly recalculate the financial valuations and unit counts strictly for assets within that region, maintaining the Stock vs Deployed split.</li>
+          <li><strong>Global Snapshot:</strong> <i>(Requires Global Access permission)</i>. Shows total unit counts and financial valuations across the entire company. Breaks down values by Physical Spaces vs Mobile Kits.</li>
+          <li><strong>Location Groups Snapshot:</strong> Allows you to select an Access Group from a dropdown (e.g., "Arizona") and instantly recalculate the financial valuations and unit counts strictly for assets within that region.</li>
         </ul>
         
         <h3>Low Stock Alerts</h3>
@@ -709,7 +715,8 @@
       </section>
       <section id="finding-data" class="doc-section">
         <h2>Finding &amp; Viewing Items</h2>
-        <p>The main screen of the application is the <strong>Location Grid</strong>. Clicking a location card opens it to reveal the inventory currently associated with it.</p>
+        <p>The main screen of the application is the <strong>Location Grid</strong>. Just like the management dashboard, this grid features a <strong>State Toggle</strong> at the top right. By default, it shows "Stock" locations. Flipping it to "Deployed" instantly recalculates the visual cards to show exactly which locations currently hold active field assets.</p>
+        <p>Clicking a location card opens it to reveal the detailed inventory currently associated with it.</p>
         <div class="callout border-primary">
           <strong>Dual-State Locations:</strong> Inside every location, inventory is strictly separated into two tabs: <strong>Stock Inventory</strong> (items sitting on a shelf ready to be used) and <strong>Deployed Assets</strong> (items currently in use or active at that location).
         </div>
@@ -959,8 +966,8 @@
         <p>Now we will build the actual database using Google Sheets. <strong>Accuracy is critical here!</strong> Do not delete columns once established, as it can skew historical indexing.</p>
         <ol>
           <li>Create a brand new, blank Google Sheet. Name it "IMS Database".</li>
-          <li>At the bottom of the screen, you will see "Sheet1". Double click it to rename it. You need to create exactly <strong>seven</strong> tabs with specific names. Use the "+" button to add new tabs.</li>
-          <li>Create these 7 tabs and set up the exact Headers/Formulas required in Row 1:
+          <li>At the bottom of the screen, you will see "Sheet1". Double click it to rename it. You need to create exactly <strong>eight</strong> tabs with specific names. Use the "+" button to add new tabs.</li>
+          <li>Create these 8 tabs and set up the exact Headers/Formulas required in Row 1:
             <ul class="mt-2">
               <li>Tab 1: <strong>Items</strong>
                 <br><span class="small text-muted">Type Headers (A1 to M1): Barcode, Make, Model, Category, Min, Spec, Image URL, Status, Description, Price, Image File, Notes, Track Serials</span>
@@ -984,6 +991,9 @@
               <li>Tab 7: <strong>Alerts</strong>
                 <br><span class="small text-muted">Paste this EXACT formula into cell <strong>A1</strong>:</span>
                 <pre class="bg-dark text-light p-2 rounded mt-1 mb-2" style="font-size: 0.75rem;"><code>=ARRAYFORMULA(QUERY({Items!A2:B, Items!E2:E, IFERROR(VLOOKUP(Items!A2:A, QUERY(Log!A:G, "SELECT C, SUM(F) GROUP BY C"), 2, FALSE), 0)}, "SELECT Col1, Col2, Col3, Col4 WHERE Col4 &lt; Col3 AND Col1 IS NOT NULL LABEL Col1 'Barcode', Col2 'Item', Col3 'Min Threshold', Col4 'Total On Hand'"))</code></pre>
+              </li>
+              <li>Tab 8: <strong>Roles</strong>
+                <br><span class="small text-muted">Leave this tab completely blank. The backend API will automatically inject the security matrix headers and default roles the very first time you boot the application!</span>
               </li>
             </ul>
           </li>
