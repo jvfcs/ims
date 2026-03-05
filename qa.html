@@ -60,10 +60,15 @@
   <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;" role="status"></div>
 </div>
 <div id="accessDenied" class="container py-5 text-center hidden">
-  <div class="card p-5 shadow-sm mx-auto mt-5" style="max-width: 500px;">
+  <div class="card p-4 p-md-5 shadow-sm mx-auto mt-5 border-danger" style="max-width: 500px;">
     <h2 class="text-danger fw-bold mb-3">Access Denied</h2>
     <p class="text-muted" id="accessDeniedMsg">You do not have permission to view the IMS. Please contact an administrator to request access.</p>
-    <p id="deniedEmail" class="fw-bold mt-3 text-secondary"></p>
+    <p id="deniedEmail" class="fw-bold mt-3 mb-4 text-secondary"></p>
+    
+    <div class="border-top pt-4">
+        <p class="small text-muted mb-2">Logged in with the wrong account?</p>
+        <button class="btn btn-outline-primary fw-bold w-100" onclick="signOut()">Sign In Again</button>
+    </div>
   </div>
 </div>
 <div id="gdprBanner" class="p-3">
