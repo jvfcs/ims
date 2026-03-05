@@ -60,10 +60,15 @@
   <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;" role="status"></div>
 </div>
 <div id="accessDenied" class="container py-5 text-center hidden">
-  <div class="card p-5 shadow-sm mx-auto mt-5" style="max-width: 500px;">
+  <div class="card p-4 p-md-5 shadow-sm mx-auto mt-5 border-danger" style="max-width: 500px;">
     <h2 class="text-danger fw-bold mb-3">Access Denied</h2>
     <p class="text-muted" id="accessDeniedMsg">You do not have permission to view the IMS. Please contact an administrator to request access.</p>
-    <p id="deniedEmail" class="fw-bold mt-3 text-secondary"></p>
+    <p id="deniedEmail" class="fw-bold mt-3 mb-4 text-secondary"></p>
+    
+    <div class="border-top pt-4">
+        <p class="small text-muted mb-2">Logged in with the wrong account?</p>
+        <button class="btn btn-outline-primary fw-bold w-100" onclick="signOut()">Sign In Again</button>
+    </div>
   </div>
 </div>
 <div id="gdprBanner" class="p-3">
@@ -90,9 +95,11 @@
 </div>
 <div id="secureAppContainer"></div>
 <script>
+  // Global Shared Variables
   var db = { template: {} };
   var appCurrency = "$";
   var appDefaultImg = "";
+  var appIdleTimeout = 15; // Default 15 minutes
   var GAS_URL = "https://script.google.com/macros/s/AKfycbxRM7pblum2TVubgCvVQBRWF6FWKkHhtT-2pJuA8kCueVGo8izlXv6BCbNOQPzOH9PqCA/exec";
   document.addEventListener("DOMContentLoaded", function() {
     checkGDPR();
@@ -117,10 +124,19 @@
     const response = await fetch(GAS_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: actionName, userEmail: email || 'public', ...payloadData })
+      body: JSON.stringify({ action: actionName, userEmail: email || 'public', userToken: localStorage.getItem('ims_google_token'), ...payloadData })
     });
     const result = await response.json();
-    if (result.error) throw new Error(result.error);
+    if (result.error) {
+        if (result.error === "SESSION_EXPIRED") {
+            // Google's 1-hour token expired. Quietly log them out so they can click the button again.
+            localStorage.removeItem('ims_google_token');
+            localStorage.removeItem('ims_user_email');
+            window.location.reload();
+            return;
+        }
+        throw new Error(result.error);
+    }
     return result.data;
   }
   function handleCredentialResponse(response) {
@@ -135,6 +151,23 @@
     localStorage.removeItem('ims_google_token');
     window.location.reload(); 
   }
+  // --- ENTERPRISE IDLE TIMEOUT ---
+  let idleTimer;
+  function resetIdleTimer() {
+      clearTimeout(idleTimer);
+      if (localStorage.getItem('ims_google_token')) {
+          if (appIdleTimeout > 0) { // 0 means disabled
+              idleTimer = setTimeout(() => {
+                  alert("Session expired due to inactivity.");
+                  signOut();
+              }, appIdleTimeout * 60 * 1000); 
+          }
+      }
+  }
+  // Listen for human activity across the entire window
+  ['mousemove', 'keydown', 'scroll', 'touchstart', 'click'].forEach(evt => 
+      document.addEventListener(evt, resetIdleTimer, true)
+  );
   async function bootApp(email) {
     document.getElementById('loginOverlay').classList.add('hidden');
     document.getElementById('loadingOverlay').classList.remove('hidden');
@@ -199,7 +232,27 @@
       if (t.darkText) document.documentElement.style.setProperty('--dark-text', t.darkText);
       if (t.currencySymbol) appCurrency = t.currencySymbol;
       if (t.defaultImgUrl) appDefaultImg = t.defaultImgUrl;
+      if (t.idleTimeout !== undefined) appIdleTimeout = parseInt(t.idleTimeout);
       if (t.adminContact) document.getElementById('accessDeniedMsg').innerText = `You do not have permission to view the IMS. Please contact ${t.adminContact} to request access.`;
+      const sortCats = (str) => {
+          let arr = str.split(',').map(s => s.trim()).filter(s => s);
+          arr.sort((a,b) => a.localeCompare(b, undefined, {sensitivity: 'base'}));
+          const otherIdx = arr.findIndex(x => x.toLowerCase() === 'other');
+          if (otherIdx > -1) arr.push(arr.splice(otherIdx, 1)[0]); // Move 'Other' to end
+          return arr;
+      };
+
+      const mCat = document.getElementById('mCat');
+      if (mCat && t.itemCategories) {
+          mCat.innerHTML = '<option value="" disabled selected>Select Category</option>' + 
+              sortCats(t.itemCategories).map(c => `<option value="${c}">${c}</option>`).join('');
+      }
+      
+      const mLtype = document.getElementById('mLtype');
+      if (mLtype && t.locationCategories) {
+          mLtype.innerHTML = '<option value="" disabled selected>Select Category</option>' + 
+              sortCats(t.locationCategories).map(c => `<option value="${c}">${c}</option>`).join('');
+      }
       if (t.googleClientId) {
           const googleDiv = document.getElementById('g_id_onload');
           googleDiv.setAttribute('data-client_id', t.googleClientId);
