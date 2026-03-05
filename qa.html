@@ -90,9 +90,11 @@
 </div>
 <div id="secureAppContainer"></div>
 <script>
+  // Global Shared Variables
   var db = { template: {} };
   var appCurrency = "$";
   var appDefaultImg = "";
+  var appIdleTimeout = 15; // Default 15 minutes
   var GAS_URL = "https://script.google.com/macros/s/AKfycbwaSuyBWnqziZSdrIHCqNESBDAhciig8SSDxI3wh4nc2Fgb70koPRb7zfCWwlOu0Zf-Ew/exec";
   document.addEventListener("DOMContentLoaded", function() {
     checkGDPR();
@@ -120,7 +122,16 @@
       body: JSON.stringify({ action: actionName, userEmail: email || 'public', userToken: localStorage.getItem('ims_google_token'), ...payloadData })
     });
     const result = await response.json();
-    if (result.error) throw new Error(result.error);
+    if (result.error) {
+        if (result.error === "SESSION_EXPIRED") {
+            // Google's 1-hour token expired. Quietly log them out so they can click the button again.
+            localStorage.removeItem('ims_google_token');
+            localStorage.removeItem('ims_user_email');
+            window.location.reload();
+            return;
+        }
+        throw new Error(result.error);
+    }
     return result.data;
   }
   function handleCredentialResponse(response) {
@@ -135,16 +146,17 @@
     localStorage.removeItem('ims_google_token');
     window.location.reload(); 
   }
-  // --- ENTERPRISE IDLE TIMEOUT (15 Minutes) ---
+  // --- ENTERPRISE IDLE TIMEOUT ---
   let idleTimer;
   function resetIdleTimer() {
       clearTimeout(idleTimer);
-      // Only run the timer if the user is actively logged in
       if (localStorage.getItem('ims_google_token')) {
-          idleTimer = setTimeout(() => {
-              alert("Session expired due to inactivity.");
-              signOut();
-          }, 15 * 60 * 1000); // 15 mins = 900,000 ms
+          if (appIdleTimeout > 0) { // 0 means disabled
+              idleTimer = setTimeout(() => {
+                  alert("Session expired due to inactivity.");
+                  signOut();
+              }, appIdleTimeout * 60 * 1000); 
+          }
       }
   }
   // Listen for human activity across the entire window
@@ -215,6 +227,7 @@
       if (t.darkText) document.documentElement.style.setProperty('--dark-text', t.darkText);
       if (t.currencySymbol) appCurrency = t.currencySymbol;
       if (t.defaultImgUrl) appDefaultImg = t.defaultImgUrl;
+      if (t.idleTimeout !== undefined) appIdleTimeout = parseInt(t.idleTimeout);
       if (t.adminContact) document.getElementById('accessDeniedMsg').innerText = `You do not have permission to view the IMS. Please contact ${t.adminContact} to request access.`;
       const sortCats = (str) => {
           let arr = str.split(',').map(s => s.trim()).filter(s => s);
