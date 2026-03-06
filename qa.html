@@ -199,28 +199,38 @@
       return new TextDecoder().decode(decryptedBytes);
   }
   function applyTemplateVars(t) {
-      if (t.appTitle) {
-          document.title = t.appTitle;
-          const tText = document.getElementById('appTitleText');
-          if (tText) tText.innerText = t.appTitle;
-      }
-      const useShort = (t.loginUseShortName && t.loginUseShortName.toLowerCase() === 'yes');
-      const loginStr = (useShort && t.appShortName) ? t.appShortName : (t.appTitle || "IMS");
+      const cfg = window.SAAS_CONFIG || {};
+      const allowBranding = cfg.allowBranding !== false; // defaults to true
+      const val = (key) => (!allowBranding && cfg[key]) ? cfg[key] : (t[key] || "");
+
+      const appTitle = val('appTitle') || "IMS";
+      document.title = appTitle;
+      const tText = document.getElementById('appTitleText');
+      if (tText) tText.innerText = appTitle;
+
+      const useShort = ((t.loginUseShortName || "")).toLowerCase() === 'yes';
+      const shortName = val('appShortName');
+      const loginStr = (useShort && shortName) ? shortName : appTitle;
       document.getElementById('loginTitle').innerText = loginStr + " Login";
+
       const loginMsgEl = document.getElementById('loginMessage');
-      if (t.loginMessage && t.loginMessage.trim() !== "") {
-          loginMsgEl.innerText = t.loginMessage;
+      const lMsg = val('loginMessage');
+      if (lMsg && lMsg.trim() !== "") {
+          loginMsgEl.innerText = lMsg;
           loginMsgEl.classList.remove('hidden');
       }
-      if (t.logoUrl) {
+
+      const logoUrl = val('logoUrl');
+      if (logoUrl) {
           ['loginLogo', 'loadLogo', 'appLogo'].forEach(id => {
               const el = document.getElementById(id);
-              if(el) { el.src = t.logoUrl; el.onload = () => el.style.opacity = '1'; }
+              if(el) { el.src = logoUrl; el.onload = () => el.style.opacity = '1'; }
           });
           let link = document.querySelector("link[rel~='icon']");
           if (!link) { link = document.createElement('link'); link.rel = 'icon'; document.head.appendChild(link); }
-          link.href = t.logoUrl;
+          link.href = logoUrl;
       }
+      
       if (t.lightTheme) document.documentElement.style.setProperty('--light-theme', t.lightTheme);
       if (t.darkTheme) document.documentElement.style.setProperty('--dark-theme', t.darkTheme);
       const currentTheme = document.documentElement.getAttribute('data-bs-theme') || 'light';
@@ -232,15 +242,19 @@
       if (t.darkBg) document.documentElement.style.setProperty('--dark-bg', t.darkBg);
       if (t.darkCard) document.documentElement.style.setProperty('--dark-card', t.darkCard);
       if (t.darkText) document.documentElement.style.setProperty('--dark-text', t.darkText);
-      if (t.currencySymbol) appCurrency = t.currencySymbol;
-      if (t.defaultImgUrl) appDefaultImg = t.defaultImgUrl;
-      if (t.idleTimeout !== undefined) appIdleTimeout = parseInt(t.idleTimeout);
-      if (t.adminContact) document.getElementById('accessDeniedMsg').innerText = `You do not have permission to view the IMS. Please contact ${t.adminContact} to request access.`;
+      
+      appCurrency = t.currencySymbol || "$";
+      appDefaultImg = val('defaultImgUrl') || "";
+      appIdleTimeout = parseInt(t.idleTimeout) || 15;
+      
+      const adminContact = val('adminContact') || cfg.repEmail;
+      if (adminContact) document.getElementById('accessDeniedMsg').innerText = `You do not have permission to view the IMS. Please contact ${adminContact} to request access.`;
+      
       const sortCats = (str) => {
           let arr = str.split(',').map(s => s.trim()).filter(s => s);
           arr.sort((a,b) => a.localeCompare(b, undefined, {sensitivity: 'base'}));
           const otherIdx = arr.findIndex(x => x.toLowerCase() === 'other');
-          if (otherIdx > -1) arr.push(arr.splice(otherIdx, 1)[0]); // Move 'Other' to end
+          if (otherIdx > -1) arr.push(arr.splice(otherIdx, 1)[0]); 
           return arr;
       };
       const mCat = document.getElementById('mCat');
