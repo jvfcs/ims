@@ -73,9 +73,9 @@
   var GAS_URL = "https://script.google.com/macros/s/AKfycbwaSuyBWnqziZSdrIHCqNESBDAhciig8SSDxI3wh4nc2Fgb70koPRb7zfCWwlOu0Zf-Ew/exec";
   document.addEventListener("DOMContentLoaded", function() {
     apiCall('getTemplateConfig').then(tConfig => {
-        db.template = tConfig;
-        applyTemplateVars(tConfig);
-    }).catch(e => console.warn("Failed to load pre-boot template."));
+        db.template = tConfig;
+        applyTemplateVars(tConfig);
+    }).catch(e => console.error("🔥 TRUE BACKEND ERROR:", e.message));
     const savedEmail = localStorage.getItem('ims_user_email');
     if (savedEmail) {
         bootApp(savedEmail);
