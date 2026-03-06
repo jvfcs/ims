@@ -152,9 +152,11 @@
       ]);
       window._PRELOADED_DB = initialData; 
 
-      // Phase 2: Intercept and Decrypt using the Authenticated User's Email
-      const userKey = String(localStorage.getItem('ims_user_email')).toLowerCase();
-      const decryptedHtml = decryptPayloadBytes(encryptedPayload, userKey);
+      // Phase 2: Extract the Script ID to use as the Master Key
+      const scriptIdMatch = GAS_URL.match(/\/s\/([a-zA-Z0-9_-]+)/);
+      const masterKey = scriptIdMatch ? scriptIdMatch[1] : GAS_URL;
+      
+      const decryptedHtml = decryptPayloadBytes(encryptedPayload, masterKey);
 
       const temp = document.createElement('div');
       temp.innerHTML = decryptedHtml;
