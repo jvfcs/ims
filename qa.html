@@ -47,7 +47,6 @@
       <img id="loginLogo" src="" alt="" style="width:300px; height:300px; object-fit:contain; margin: 0 auto; opacity: 0; transition: opacity 0.5s;" class="mb-3">
       <h3 id="loginTitle" class="fw-bold text-primary mb-3">Login</h3> 
       <p id="loginMessage" class="text-muted small mb-4 hidden"></p>       
-      <div id="g_id_onload"></div>
       <div class="d-flex justify-content-center" style="min-height: 44px;">
           <div id="googleSignInBtn"></div>
       </div>
@@ -265,8 +264,6 @@
               sortCats(t.locationCategories).map(c => `<option value="${c}">${c}</option>`).join('');
       }
       if (t.googleClientId) {
-          const googleDiv = document.getElementById('g_id_onload');
-          googleDiv.setAttribute('data-client_id', t.googleClientId);
           if (window.google && window.google.accounts) {
               window.google.accounts.id.initialize({ client_id: t.googleClientId, callback: handleCredentialResponse });
               window.google.accounts.id.renderButton(document.getElementById('googleSignInBtn'), { theme: "outline", size: "large", type: "standard", shape: "rectangular", logo_alignment: "left" });
