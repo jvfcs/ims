@@ -98,7 +98,19 @@
     apiCall('getTemplateConfig').then(tConfig => {
         db.template = tConfig;
         applyTemplateVars(tConfig);
-    }).catch(e => console.error("🔥 TRUE BACKEND ERROR:", e.message));
+    }).catch(e => {
+        console.error("🔥 CONFIG ERROR:", e.message);
+        
+        // Hide spinners and show the error card
+        document.getElementById('loginOverlay').classList.add('hidden');
+        document.getElementById('loadingOverlay').classList.add('hidden');
+        document.getElementById('accessDenied').classList.remove('hidden');
+        
+        // Inject the specific error message into the UI
+        document.getElementById('accessDeniedMsg').innerText = "System Configuration Error";
+        document.getElementById('deniedEmail').innerText = e.message;
+    });
+
     const savedEmail = localStorage.getItem('ims_user_email');
     if (savedEmail) {
         bootApp(savedEmail);
