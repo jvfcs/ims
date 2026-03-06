@@ -29,6 +29,14 @@
     .btn-outline-primary { color: var(--brand-color) !important; border-color: var(--brand-color) !important; }
     #loadingOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--light-bg); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.3s ease; }
     [data-bs-theme="dark"] #loadingOverlay { background-color: var(--dark-bg); }
+    
+    /* GDPR Banner & Modal Styles */
+    #gdprBanner { position: fixed; bottom: 0; left: 0; right: 0; z-index: 10500; background: var(--light-bg); border-top: 1px solid rgba(0,0,0,0.1); box-shadow: 0 -4px 15px rgba(0,0,0,0.05); transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+    [data-bs-theme="dark"] #gdprBanner { background: var(--dark-bg); border-top: 1px solid rgba(255,255,255,0.1); box-shadow: 0 -4px 15px rgba(0,0,0,0.3); }
+    #gdprBanner.visible { transform: translateY(0); }
+    [data-bs-theme="dark"] .gdpr-text { color: var(--dark-text) !important; }
+    @keyframes pulseAlert { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+    .animation-pulse { animation: pulseAlert 2s infinite; }
   </style>
 </head>
 <body>
@@ -64,6 +72,7 @@
     </div>
   </div>
 </div>
+<div id="legalContainer"></div>
 <div id="secureAppContainer"></div>
 <script>
   var db = { template: {} };
@@ -273,14 +282,66 @@
       }
       
       const footerEl = document.getElementById('appFooterText');
-      if (footerEl && t.footerText) footerEl.innerText = t.footerText;
+      if (footerEl && t.footerText) footerEl.innerText = t.footerText;
 
-      const spin = document.getElementById('loginSpinner');
+      // Inject the secure HTML from the Mothership into the empty container
+      if (t.legalSystemHtml) {
+          document.getElementById('legalContainer').innerHTML = t.legalSystemHtml;
+          checkGDPR(); // Trigger banner logic AFTER HTML is injected
+      }
+
+      const spin = document.getElementById('loginSpinner');
       if (spin) spin.classList.add('hidden');
       const lCont = document.getElementById('loginContent');
-      if (lCont) lCont.classList.remove('hidden');
+      if (lCont) lCont.classList.remove('hidden');
+  }
+
+  function checkGDPR() {
+    if (!localStorage.getItem('ims_gdpr_consent')) {
+      setTimeout(() => { 
+          const banner = document.getElementById('gdprBanner');
+          if(banner) banner.classList.add('visible'); 
+      }, 1000);
+    }
   }
-</script>
+
+  function acceptGDPR() {
+    localStorage.setItem('ims_gdpr_consent', 'true');
+    const banner = document.getElementById('gdprBanner');
+    if(banner) banner.classList.remove('visible');
+  }
+
+  function showLegalModal(e) {
+      if (e) e.preventDefault();      
+      const modalEl = document.getElementById('legalModal');
+      if (!modalEl) return;
+      
+      const bodyEl = document.getElementById('legalModalBody');
+      const btn1 = document.getElementById('legalCloseBtn');
+      const btn2 = document.getElementById('legalCloseTop');
+      const prompt = document.getElementById('legalScrollPrompt');
+      
+      btn1.disabled = true; btn2.disabled = true;
+      btn1.className = "btn btn-secondary fw-bold";
+      prompt.style.display = "inline-block";
+      
+      const unlockModal = () => {
+          btn1.disabled = false; btn2.disabled = false;
+          prompt.style.display = "none";
+          btn1.classList.replace('btn-secondary', 'btn-success');
+          btn1.innerText = "I Agree & Close";
+      };
+
+      bodyEl.onscroll = function() {
+          if (bodyEl.scrollTop + bodyEl.clientHeight >= bodyEl.scrollHeight - 15) unlockModal();
+      };
+
+      setTimeout(() => {
+          if (bodyEl.scrollHeight <= bodyEl.clientHeight + 10) unlockModal();
+      }, 300);
+
+      new bootstrap.Modal(modalEl).show();
+  }
 </script>
 </body>
 </html>
