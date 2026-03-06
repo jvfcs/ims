@@ -152,8 +152,9 @@
       ]);
       window._PRELOADED_DB = initialData; 
 
-      // Phase 2: Intercept and Decrypt using the Proxy URL as the Master Key
-      const decryptedHtml = decryptPayloadBytes(encryptedPayload, GAS_URL);
+      // Phase 2: Intercept and Decrypt using the Authenticated User's Email
+      const userKey = String(localStorage.getItem('ims_user_email')).toLowerCase();
+      const decryptedHtml = decryptPayloadBytes(encryptedPayload, userKey);
 
       const temp = document.createElement('div');
       temp.innerHTML = decryptedHtml;
