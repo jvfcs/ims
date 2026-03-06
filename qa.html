@@ -37,6 +37,10 @@
     [data-bs-theme="dark"] .gdpr-text { color: var(--dark-text) !important; }
     @keyframes pulseAlert { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
     .animation-pulse { animation: pulseAlert 2s infinite; }
+    
+    /* Force Modal Above Login Screen */
+    .modal-backdrop { z-index: 10550 !important; }
+    .modal { z-index: 10600 !important; }
   </style>
 </head>
 <body>
