@@ -47,7 +47,7 @@
       <img id="loginLogo" src="" alt="" style="width:300px; height:300px; object-fit:contain; margin: 0 auto; opacity: 0; transition: opacity 0.5s;" class="mb-3">
       <h3 id="loginTitle" class="fw-bold text-primary mb-3">Login</h3> 
       <p id="loginMessage" class="text-muted small mb-4 hidden"></p>       
-      <div id="g_id_onload" data-context="signin" data-ux_mode="popup" data-callback="handleCredentialResponse" data-auto_prompt="false"></div>
+      <div id="g_id_onload"></div>
       <div class="d-flex justify-content-center" style="min-height: 44px;">
           <div class="g_id_signin" data-type="standard" data-shape="rectangular" data-theme="outline" data-text="sign_in_with" data-size="large" data-logo_alignment="left"></div>
       </div>
@@ -187,10 +187,21 @@
       const scripts = temp.querySelectorAll('script');
       scripts.forEach(s => s.remove());
       document.getElementById('secureAppContainer').innerHTML = temp.innerHTML;
-      scripts.forEach(script => {
+      scripts.forEach((script) => {
         const newScript = document.createElement('script');
-        newScript.textContent = script.textContent;
-        document.body.appendChild(newScript);
+        newScript.text = script.text;
+        try {
+          document.body.appendChild(newScript);
+        } catch (e) {
+          console.error("🔥 JAVASCRIPT SYNTAX ERROR IN MOTHERSHIP PAYLOAD 🔥");
+          console.error("The browser refused to execute the payload because of a typo.");
+          console.error(e);
+          console.log("------- COPY THE CODE BELOW TO FIND THE TYPO -------");
+          console.log(script.text);
+          
+          // Failsafe: hide the loading spinner so you can at least see the UI skeleton
+          document.getElementById('loadingOverlay').classList.add('hidden');
+        }
       });
     } catch (err) {
       document.getElementById('loadingOverlay').classList.add('hidden');
