@@ -28,12 +28,7 @@
     .bg-primary, .btn-primary { background-color: var(--brand-color) !important; border-color: var(--brand-color) !important; color: #fff !important; }
     .btn-outline-primary { color: var(--brand-color) !important; border-color: var(--brand-color) !important; }
     #loadingOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--light-bg); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.3s ease; }
-    [data-bs-theme="dark"] #loadingOverlay { background-color: var(--dark-bg); }    
-    #gdprBanner { position: fixed; bottom: 0; left: 0; right: 0; z-index: 10500; background: var(--light-bg); border-top: 1px solid rgba(0,0,0,0.1); box-shadow: 0 -4px 15px rgba(0,0,0,0.05); transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
-    [data-bs-theme="dark"] #gdprBanner { background: var(--dark-bg); border-top: 1px solid rgba(255,255,255,0.1); }
-    #gdprBanner.visible { transform: translateY(0); }
-    .modal-backdrop { z-index: 10550 !important; }
-    .modal { z-index: 10600 !important; }
+    [data-bs-theme="dark"] #loadingOverlay { background-color: var(--dark-bg); }
   </style>
 </head>
 <body>
@@ -69,28 +64,6 @@
     </div>
   </div>
 </div>
-<div id="gdprBanner" class="p-3">
-  <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
-    <div style="font-size: 0.85rem;" class="text-md-start text-center text-muted gdpr-text">
-      <strong>We value your privacy.</strong> This system uses essential browser storage and Google authentication tokens to maintain your session, enforce security roles, and save your theme preferences. We do not track you across the web or sell your data. By continuing to use this application, you consent to our <a href="#" onclick="showLegalModal(event)" style="color: var(--brand-color); font-weight: bold; text-decoration: none;">Privacy Policy & Terms</a>.
-    </div>
-    <button class="btn btn-sm text-white fw-bold text-nowrap px-4" style="background-color: var(--brand-color);" onclick="acceptGDPR()">I Understand & Accept</button>
-  </div>
-</div>
-<div class="modal fade" id="legalModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-scrollable modal-lg">
-    <div class="modal-content bg-white" style="border-radius: 12px;">
-      <div class="modal-header border-bottom">
-        <h5 class="modal-title fw-bold text-primary">Terms & Privacy Policy</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body text-dark" style="font-size: 0.85rem; line-height: 1.6;" id="legalModalBody"></div>
-      <div class="modal-footer border-top bg-light">
-        <button type="button" class="btn btn-secondary fw-bold" data-bs-dismiss="modal">Close</button>
-      </div>
-    </div>
-  </div>
-</div>
 <div id="secureAppContainer"></div>
 <script>
   var db = { template: {} };
@@ -99,7 +72,6 @@
   var appIdleTimeout = 15; // Default 15 minutes
   var GAS_URL = "https://script.google.com/macros/s/AKfycbwaSuyBWnqziZSdrIHCqNESBDAhciig8SSDxI3wh4nc2Fgb70koPRb7zfCWwlOu0Zf-Ew/exec";
   document.addEventListener("DOMContentLoaded", function() {
-    checkGDPR();
     apiCall('getTemplateConfig').then(tConfig => {
         db.template = tConfig;
         applyTemplateVars(tConfig);
@@ -271,54 +243,6 @@
       }
       document.getElementById('loginSpinner').classList.add('hidden');
       document.getElementById('loginContent').classList.remove('hidden');
-  }
-  function checkGDPR() {
-    if (!localStorage.getItem('ims_gdpr_consent')) {
-      setTimeout(() => { document.getElementById('gdprBanner').classList.add('visible'); }, 1000);
-    }
-  }
-  function acceptGDPR() {
-    localStorage.setItem('ims_gdpr_consent', 'true');
-    document.getElementById('gdprBanner').classList.remove('visible');
-  }
-  function showLegalModal(e) {
-      if (e) e.preventDefault();      
-      const t = db.template || {};
-      const company = (window.SAAS_CONFIG && window.SAAS_CONFIG.companyName) ? window.SAAS_CONFIG.companyName : (t.companyName || "The Company");
-      const dev = (window.SAAS_CONFIG && window.SAAS_CONFIG.developerName) ? window.SAAS_CONFIG.developerName : (t.developerName || "Jack Vu");
-      const appName = t.appTitle || "Inventory Management System";
-      const contact = t.adminContact || "your system administrator";
-      const contactLink = t.adminContact ? `mailto:${t.adminContact}` : '#';
-      document.getElementById('legalModalBody').innerHTML = `
-        <h6 class="fw-bold" style="color: var(--brand-color);">1. Introduction & Acceptance</h6>
-        <p>This Privacy Policy and Terms of Service govern the use of the ${appName} ("The Application"). By accessing, authenticating, or utilizing this system, you ("The User") agree to be bound by these terms in full. If you do not agree to these terms, you must exit The Application immediately.</p>
-        <h6 class="fw-bold mt-4" style="color: var(--brand-color);">2. Intellectual Property & Ownership</h6>
-        <p>The Application was independently architected, engineered, and developed by <span class="fw-bold">${dev}</span> on personal time. It utilizes open-source UI frameworks (GitHub Pages) and Google Workspace APIs (Apps Script, Sheets, Drive). While the inventory data processed within The Application is the exclusive property of <span class="fw-bold">${company}</span>, the underlying architecture, logic, source code, and design patterns of The Application remain the sole intellectual property of <span class="fw-bold">${dev}</span>, unless otherwise stipulated in a formally executed written agreement.</p>
-        <h6 class="fw-bold mt-4" style="color: var(--brand-color);">3. Data Collection, Privacy, CCPA & GDPR Compliance</h6>
-        <p>In compliance with the California Consumer Privacy Act (CCPA), the General Data Protection Regulation (GDPR), and applicable state laws, we disclose the following regarding data processing:</p>
-        <ul>
-          <li><strong>Identity Data & Legal Basis:</strong> We collect your email address exclusively via secure Google Workspace OAuth. The legal basis for this processing is legitimate operational interest for system authentication, role-based access control, and security auditing.</li>
-          <li><strong>Activity Data:</strong> Interactions (e.g., checking items in/out, moving assets) are permanently logged with your email and a timestamp to maintain a secure chain of custody.</li>
-          <li><strong>Local Device Storage (Cookies/Cache):</strong> The Application strictly uses essential local browser storage (<code>localStorage</code>) to store your active authentication tokens, theme preferences, and consent flags. We do not use cross-site tracking cookies or analytics pixels.</li>
-          <li><strong>User Rights (GDPR/CCPA):</strong> You retain the right to request access to, rectification of, or erasure (Right to be Forgotten) of your personal data. Note that erasure of immutable audit logs may be legally restricted by <span class="fw-bold">${company}</span>'s legitimate compliance or security requirements.</li>
-          <li><strong>Third-Party Sharing:</strong> Zero user or inventory data is sold, monetized, or shared with external third parties. All data is securely contained within <span class="fw-bold">${company}</span>'s Google Workspace infrastructure.</li>
-        </ul>
-        <h6 class="fw-bold mt-4" style="color: var(--brand-color);">4. Prohibited Data & Sensitive Information</h6>
-        <p>The Application is designed exclusively for standard physical inventory tracking and is <strong>NOT</strong> compliant with HIPAA, FERPA, or PCI-DSS standard out-of-the-box. Users are strictly prohibited from entering, uploading, or storing highly sensitive regulated data within any text field, note, or image upload. This includes, but is not limited to: Protected Health Information (PHI), Personally Identifiable Information (PII) of minors, Social Security Numbers, or primary payment card details.</p>
-        <h6 class="fw-bold mt-4" style="color: var(--brand-color);">5. System Security & Acceptable Use</h6>
-        <p>Access to the backend infrastructure is strictly restricted. The Application utilizes a Dynamic Injection Architecture; proprietary operational code is only securely served to your device upon successful authentication. You agree to interface with The Application solely through the provided front-end User Interface. You agree not to reverse engineer, scrape, bypass security protocols, or intentionally disrupt the API.</p>
-        <p><strong>Note on Browser History:</strong> The Application uses URL deep-linking for navigation. Internal asset barcodes and location names may be saved to your local device's browser history. You are solely responsible for maintaining the physical security of your device and your Google account credentials.</p>
-        <h6 class="fw-bold mt-4" style="color: var(--brand-color);">6. Disclaimer of Warranties ("As-Is" Provision)</h6>
-        <p>The Application is provided strictly "AS IS" and "AS AVAILABLE" without any warranties of any kind, whether express, implied, or statutory. <span class="fw-bold">${dev}</span> expressly disclaims any implied warranties of merchantability, fitness for a particular purpose, non-infringement, or guarantee of continuous, error-free operation.</p>
-        <h6 class="fw-bold mt-4" style="color: var(--brand-color);">7. Limitation of Liability & Indemnification</h6>
-        <p>Under no circumstances shall <span class="fw-bold">${dev}</span> be held liable for any direct, indirect, incidental, consequential, or special damages arising out of or in connection with your use of The Application. This includes, but is not limited to, data loss, inventory discrepancies, business interruption, or financial loss. By using this system, <span class="fw-bold">${company}</span> and its authorized users agree to indemnify and hold harmless <span class="fw-bold">${dev}</span> from any claims, damages, or liabilities resulting from its use.</p>
-        <h6 class="fw-bold mt-4" style="color: var(--brand-color);">8. Modifications & Governing Law</h6>
-        <p>These terms may be updated at any time. Continued use of The Application implies ongoing consent to any revisions. These terms shall be governed by and construed in accordance with the laws of the State of California and the State of Arizona, without regard to conflict of law principles.</p>
-        <h6 class="fw-bold mt-4" style="color: var(--brand-color);">9. Contact & Data Privacy Requests</h6>
-        <p>If you wish to request a record of your data, report a vulnerability, or request the deletion of your user profile in accordance with state or international privacy rights, please contact: <a href="${contactLink}" class="fw-bold" style="color: var(--brand-color);">${contact}</a>.</p>
-      `;      
-      const legalModal = new bootstrap.Modal(document.getElementById('legalModal'));
-      legalModal.show();
   }
 </script>
 </script>
