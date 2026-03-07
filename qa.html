@@ -22,29 +22,25 @@
       --dark-bg: #121212; --dark-card: #1e1e1e; --dark-text: #e0e0e0;
     }
     [data-bs-theme="dark"] { --brand-color: var(--dark-theme); }
-    body { background-color: var(--light-bg); color: var(--light-text); font-family: sans-serif; -webkit-touch-callout: none; margin:0; padding:0; height: 100vh; overflow-x: hidden;}
+    html, body { max-width: 100%; overflow-x: hidden; }
+    body { background-color: var(--light-bg); color: var(--light-text); font-family: sans-serif; -webkit-touch-callout: none; margin:0; padding:0; height: 100vh; width: 100%; }
     .hidden { display: none !important; }
     .text-primary { color: var(--brand-color) !important; }
     .bg-primary, .btn-primary { background-color: var(--brand-color) !important; border-color: var(--brand-color) !important; color: #fff !important; }
     .btn-outline-primary { color: var(--brand-color) !important; border-color: var(--brand-color) !important; }
     #loadingOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--light-bg); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.3s ease; }
     [data-bs-theme="dark"] #loadingOverlay { background-color: var(--dark-bg); }
-    
-    /* GDPR Banner & Modal Styles */
     #gdprBanner { position: fixed; bottom: 0; left: 0; right: 0; z-index: 10500; background: var(--light-bg); border-top: 1px solid rgba(0,0,0,0.1); box-shadow: 0 -4px 15px rgba(0,0,0,0.05); transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
     [data-bs-theme="dark"] #gdprBanner { background: var(--dark-bg); border-top: 1px solid rgba(255,255,255,0.1); box-shadow: 0 -4px 15px rgba(0,0,0,0.3); }
     #gdprBanner.visible { transform: translateY(0); }
     [data-bs-theme="dark"] .gdpr-text { color: var(--dark-text) !important; }
     @keyframes pulseAlert { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
     .animation-pulse { animation: pulseAlert 2s infinite; }
-    
-    /* Force Modal Above Login Screen */
     .modal-backdrop { z-index: 10550 !important; }
     .modal { z-index: 10600 !important; }
   </style>
 </head>
 <body>
-
 <div id="idleWarningOverlay" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 10700; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(3px);">
   <div class="card p-4 shadow-lg text-center" style="max-width: 400px; width: 90%; background: var(--light-card); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px;">
     <div class="mb-2" style="font-size: 3.5rem; line-height: 1;">⏳</div>
@@ -53,7 +49,6 @@
     <button id="extendSessionBtn" class="btn btn-primary fw-bold w-100 py-3 fs-5" onclick="extendSession()">I'm still here</button>
   </div>
 </div>
-
 <div id="loginOverlay" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--light-bg); z-index: 10000; display: flex; align-items: center; justify-content: center;">
   <div class="card p-4 shadow-sm text-center" style="max-width: 400px; width: 90%; background: var(--light-card); min-height: 400px; display: flex; flex-direction: column; justify-content: center;">    
     <div id="loginSpinner">
@@ -100,17 +95,12 @@
         applyTemplateVars(tConfig);
     }).catch(e => {
         console.error("🔥 CONFIG ERROR:", e.message);
-        
-        // Hide spinners and show the error card
         document.getElementById('loginOverlay').classList.add('hidden');
         document.getElementById('loadingOverlay').classList.add('hidden');
         document.getElementById('accessDenied').classList.remove('hidden');
-        
-        // Inject the specific error message into the UI
         document.getElementById('accessDeniedMsg').innerText = "System Configuration Error";
         document.getElementById('deniedEmail').innerText = e.message;
     });
-
     const savedEmail = localStorage.getItem('ims_user_email');
     if (savedEmail) {
         bootApp(savedEmail);
@@ -133,7 +123,6 @@
     const result = await response.json();
     if (result.error) {
         if (result.error === "SESSION_EXPIRED") {
-            // Google's 1-hour token expired. Quietly log them out so they can click the button again.
             localStorage.removeItem('ims_google_token');
             localStorage.removeItem('ims_user_email');
             window.location.reload();
@@ -158,44 +147,33 @@
   let idleWarningTimer;
   let countdownInterval;
   let isIdleWarningActive = false;
-
-  // Dedicated function explicitly attached to the button click
   function extendSession() {
       isIdleWarningActive = false;
       const overlay = document.getElementById('idleWarningOverlay');
       if (overlay) overlay.classList.add('hidden');
       resetIdleTimer(); // Manually restart the background timers
   }
-
   function resetIdleTimer() {
-      // HARD LOCK: If the warning is visible, instantly ignore all background events.
       if (isIdleWarningActive) return;
-
       clearTimeout(idleWarningTimer);
       clearInterval(countdownInterval);
-
       if (localStorage.getItem('ims_google_token') && appIdleTimeout > 0) {
           let totalMs = appIdleTimeout * 60 * 1000;
           let warningMs = Math.min(2 * 60 * 1000, totalMs / 2); 
           let idleTimeBeforeWarning = totalMs - warningMs;
-
           idleWarningTimer = setTimeout(() => {
               showIdleWarning(warningMs, idleTimeBeforeWarning);
           }, idleTimeBeforeWarning);
       }
   }
-
   function showIdleWarning(warningMs, idleTimeBeforeWarning) {
       isIdleWarningActive = true;
       const overlay = document.getElementById('idleWarningOverlay');
       if (overlay) overlay.classList.remove('hidden');
-      
       let timeLeft = Math.floor(warningMs / 1000);
       let idleMinutes = Math.floor(idleTimeBeforeWarning / 60000);
-      if (idleMinutes < 1) idleMinutes = 1; 
-      
+      if (idleMinutes < 1) idleMinutes = 1;
       const textEl = document.getElementById('idleWarningText');
-      
       const updateText = () => {
           let min = Math.floor(timeLeft / 60);
           let sec = Math.floor(timeLeft % 60).toString().padStart(2, '0');
@@ -203,9 +181,7 @@
               textEl.innerHTML = `You have been idle for over ${idleMinutes} minute${idleMinutes !== 1 ? 's' : ''}.<br><br>Your session will expire in <br><span class="text-danger fw-bold mt-2 d-block" style="font-size: 3rem;">${min}:${sec}</span>`;
           }
       };
-      
       updateText();
-      
       countdownInterval = setInterval(() => {
           timeLeft--;
           if (timeLeft <= 0) {
@@ -216,7 +192,6 @@
           }
       }, 1000);
   }
-
   ['mousemove', 'keydown', 'scroll', 'touchstart', 'click'].forEach(evt => 
       document.addEventListener(evt, resetIdleTimer, true)
   );
@@ -224,7 +199,6 @@
     document.getElementById('loginOverlay').classList.add('hidden');
     document.getElementById('loadingOverlay').classList.remove('hidden');
     document.getElementById('loadingOverlay').style.opacity = '1';
-
     const lastHeartbeat = localStorage.getItem('ims_last_heartbeat');
     const today = new Date().toDateString();
     if (lastHeartbeat !== today) {
@@ -235,13 +209,10 @@
          apiCall('getSecureApp'),
          apiCall('getInitialData')
       ]);
-      window._PRELOADED_DB = initialData; 
-
-      // RESTORED: Extract Script ID and Decrypt
+      window._PRELOADED_DB = initialData;
       const scriptIdMatch = GAS_URL.match(/\/s\/([a-zA-Z0-9_-]+)/);
       const masterKey = scriptIdMatch ? scriptIdMatch[1] : GAS_URL;
       const decryptedHtml = decryptPayloadBytes(encryptedPayload, masterKey);
-
       const temp = document.createElement('div');
       temp.innerHTML = decryptedHtml;
       const styles = temp.querySelectorAll('style');
@@ -260,8 +231,6 @@
           console.error(e);
           console.log("------- COPY THE CODE BELOW TO FIND THE TYPO -------");
           console.log(script.text);
-          
-          // Failsafe: hide the loading spinner so you can at least see the UI skeleton
           document.getElementById('loadingOverlay').classList.add('hidden');
         }
       });
@@ -285,12 +254,10 @@
       document.title = appTitle;
       const tText = document.getElementById('appTitleText');
       if (tText) tText.innerText = appTitle;
-
       const useShort = ((t.loginUseShortName || "")).toLowerCase() === 'yes';
       const shortName = t.appShortName;
       const loginStr = (useShort && shortName) ? shortName : appTitle;
       document.getElementById('loginTitle').innerText = loginStr + " Login";
-
       const loginMsgEl = document.getElementById('loginMessage');
       if (t.loginMessage && t.loginMessage.trim() !== "") {
           loginMsgEl.innerText = t.loginMessage;
@@ -298,7 +265,6 @@
       } else {
           loginMsgEl.classList.add('hidden');
       }
-
       const logoUrl = t.logoUrl;
       if (logoUrl) {
           ['loginLogo', 'loadLogo', 'appLogo'].forEach(id => {
@@ -309,30 +275,25 @@
           if (!link) { link = document.createElement('link'); link.rel = 'icon'; document.head.appendChild(link); }
           link.href = logoUrl;
       }
-      
       if (t.lightTheme) document.documentElement.style.setProperty('--light-theme', t.lightTheme);
       if (t.darkTheme) document.documentElement.style.setProperty('--dark-theme', t.darkTheme);
       const currentTheme = document.documentElement.getAttribute('data-bs-theme') || 'light';
       const activeColor = currentTheme === 'dark' ? (t.darkTheme || '#58a6ff') : (t.lightTheme || '#0d6efd');
       document.querySelector('meta[name="theme-color"]').setAttribute("content", activeColor);
-      
       if (t.lightBg) document.documentElement.style.setProperty('--light-bg', t.lightBg);
       if (t.lightCard) document.documentElement.style.setProperty('--light-card', t.lightCard);
       if (t.lightText) document.documentElement.style.setProperty('--light-text', t.lightText);
       if (t.darkBg) document.documentElement.style.setProperty('--dark-bg', t.darkBg);
       if (t.darkCard) document.documentElement.style.setProperty('--dark-card', t.darkCard);
       if (t.darkText) document.documentElement.style.setProperty('--dark-text', t.darkText);
-      
       appCurrency = t.currencySymbol || "$";
       appDefaultImg = t.defaultImgUrl || "";
       appIdleTimeout = parseInt(t.idleTimeout) || 15;
-      
       const adminContact = t.adminContact || t._repEmail;
       if (adminContact) {
           const deniedMsg = document.getElementById('accessDeniedMsg');
           if (deniedMsg) deniedMsg.innerText = `You do not have permission to view the IMS. Please contact ${adminContact} to request access.`;
       }
-      
       const sortCats = (str) => {
           let arr = str.split(',').map(s => s.trim()).filter(s => s);
           arr.sort((a,b) => a.localeCompare(b, undefined, {sensitivity: 'base'}));
@@ -356,22 +317,17 @@
               window.google.accounts.id.renderButton(document.getElementById('googleSignInBtn'), { theme: "outline", size: "large", type: "standard", shape: "rectangular", logo_alignment: "left" });
           }
       }
-      
       const footerEl = document.getElementById('appFooterText');
-      if (footerEl && t.footerText) footerEl.innerText = t.footerText;
-
-      // Inject the secure HTML from the Mothership into the empty container
+      if (footerEl && t.footerText) footerEl.innerText = t.footerText;
       if (t.legalSystemHtml) {
           document.getElementById('legalContainer').innerHTML = t.legalSystemHtml;
-          checkGDPR(); // Trigger banner logic AFTER HTML is injected
+          checkGDPR();
       }
-
-      const spin = document.getElementById('loginSpinner');
+      const spin = document.getElementById('loginSpinner');
       if (spin) spin.classList.add('hidden');
       const lCont = document.getElementById('loginContent');
-      if (lCont) lCont.classList.remove('hidden');
-  }
-
+      if (lCont) lCont.classList.remove('hidden');
+  }
   function checkGDPR() {
     if (!localStorage.getItem('ims_gdpr_consent')) {
       setTimeout(() => { 
@@ -380,42 +336,34 @@
       }, 1000);
     }
   }
-
   function acceptGDPR() {
     localStorage.setItem('ims_gdpr_consent', 'true');
     const banner = document.getElementById('gdprBanner');
     if(banner) banner.classList.remove('visible');
   }
-
   function showLegalModal(e) {
       if (e) e.preventDefault();      
       const modalEl = document.getElementById('legalModal');
       if (!modalEl) return;
-      
       const bodyEl = document.getElementById('legalModalBody');
       const btn1 = document.getElementById('legalCloseBtn');
       const btn2 = document.getElementById('legalCloseTop');
       const prompt = document.getElementById('legalScrollPrompt');
-      
       btn1.disabled = true; btn2.disabled = true;
       btn1.className = "btn btn-secondary fw-bold";
       prompt.style.display = "inline-block";
-      
       const unlockModal = () => {
           btn1.disabled = false; btn2.disabled = false;
           prompt.style.display = "none";
           btn1.classList.replace('btn-secondary', 'btn-success');
           btn1.innerText = "I Agree & Close";
       };
-
       bodyEl.onscroll = function() {
           if (bodyEl.scrollTop + bodyEl.clientHeight >= bodyEl.scrollHeight - 15) unlockModal();
       };
-
       setTimeout(() => {
           if (bodyEl.scrollHeight <= bodyEl.clientHeight + 10) unlockModal();
       }, 300);
-
       new bootstrap.Modal(modalEl).show();
   }
 </script>
