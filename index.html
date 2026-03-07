@@ -122,11 +122,11 @@
     });
     const result = await response.json();
     if (result.error) {
-        if (result.error === "SESSION_EXPIRED") {
+        if (result.error.includes("SESSION_EXPIRED")) {
             localStorage.removeItem('ims_google_token');
             localStorage.removeItem('ims_user_email');
             window.location.reload();
-            return;
+            return new Promise(() => {}); 
         }
         throw new Error(result.error);
     }
