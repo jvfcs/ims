@@ -3,7 +3,7 @@
 <head>
   <base target="_top">
   <link rel="icon" href="data:,">
-  <meta http-equiv="Content-Security-Policy" content="connect-src 'self' https://script.google.com https://script.googleusercontent.com https://accounts.google.com https://oauth2.googleapis.com https://cdnjs.cloudflare.com; frame-src https://accounts.google.com;">
+  <meta http-equiv="Content-Security-Policy" content="connect-src 'self' https://script.google.com https://script.googleusercontent.com https://accounts.google.com https://oauth2.googleapis.com https://cdnjs.cloudflare.com https://api.ipify.org; frame-src https://accounts.google.com;">
   <title>IMS</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0, viewport-fit=cover">
   <meta name="mobile-web-app-capable" content="yes">
@@ -31,7 +31,6 @@
     .bg-primary, .btn-primary { background-color: var(--brand-color) !important; border-color: var(--brand-color) !important; color: #fff !important; }
     .btn-outline-primary { color: var(--brand-color) !important; border-color: var(--brand-color) !important; }
     #loadingOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--light-bg); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.3s ease; }
-    [data-bs-theme="dark"] #loadingOverlay { background-color: var(--dark-bg); }
     #gdprBanner { position: fixed; bottom: 0; left: 0; right: 0; z-index: 10500; background: var(--light-bg); border-top: 1px solid rgba(0,0,0,0.1); box-shadow: 0 -4px 15px rgba(0,0,0,0.05); transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
     [data-bs-theme="dark"] #gdprBanner { background: var(--dark-bg); border-top: 1px solid rgba(255,255,255,0.1); box-shadow: 0 -4px 15px rgba(0,0,0,0.3); }
     #gdprBanner.visible { transform: translateY(0); }
@@ -68,10 +67,11 @@
   </div>
 </div>
 <div id="loadingOverlay">
-  <div class="card p-4 shadow-sm text-center" style="max-width: 400px; width: 90%; background: var(--light-card); min-height: 400px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
-    <img id="loadLogo" src="" alt="" style="width:250px; height:250px; object-fit:contain; margin: 0 auto; opacity: 0; transition: opacity 0.5s;" class="mb-4">
-    <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;" role="status"></div>
-    <h5 class="fw-bold text-muted m-0" id="loadingText">Loading Secure Environment...</h5>
+  <div class="card p-4 shadow-sm text-center" style="max-width: 400px; width: 90%; background: var(--light-card); min-height: 400px; display: flex; flex-direction: column; justify-content: center;">
+    <div>
+      <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;" role="status"></div>
+      <h5 class="fw-bold text-muted m-0" id="loadingText">Loading Secure Environment...</h5>
+    </div>
   </div>
 </div>
 <div id="accessDenied" class="container py-5 text-center hidden">
@@ -136,12 +136,20 @@
     }
     return result.data;
   }
-  function handleCredentialResponse(response) {
+  async function handleCredentialResponse(response) {
     const jwt = response.credential;
     const payload = JSON.parse(atob(jwt.split('.')[1]));
     localStorage.setItem('ims_user_email', payload.email);
     localStorage.setItem('ims_google_token', jwt);    
-    apiCall('recordLogin').catch(e => console.warn("Login tracking failed."));
+    
+    let userIp = "Unknown";
+    try {
+        const ipRes = await fetch('https://api.ipify.org?format=json');
+        const ipData = await ipRes.json();
+        userIp = ipData.ip;
+    } catch(e) {}
+    
+    apiCall('recordLogin', { data: { ipAddress: userIp } }).catch(e => console.warn("Login tracking failed."));
     bootApp(payload.email);
   }
   async function signOut() {
@@ -149,7 +157,6 @@
     const logOverlay = document.getElementById('loginOverlay');
     const loadOverlay = document.getElementById('loadingOverlay');
     const loadText = document.getElementById('loadingText');
-    
     if (appCont) appCont.classList.add('hidden');
     if (logOverlay) logOverlay.classList.add('hidden');
     if (loadOverlay) {
@@ -346,9 +353,10 @@
               sortCats(t.locationCategories).map(c => `<option value="${c}">${c}</option>`).join('');
       }
       if (t.googleClientId) {
-          if (window.google && window.google.accounts) {
+          if (window.google && window.google.accounts && !window._gsiInitialized) {
               window.google.accounts.id.initialize({ client_id: t.googleClientId, callback: handleCredentialResponse });
               window.google.accounts.id.renderButton(document.getElementById('googleSignInBtn'), { theme: "outline", size: "large", type: "standard", shape: "rectangular", logo_alignment: "left" });
+              window._gsiInitialized = true;
           }
       }
       const footerEl = document.getElementById('appFooterText');
